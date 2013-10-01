@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Pavel Stastny
+ * Copyright (C) 2013 Alberto Hernandez
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@ package cz.incad.cdk.cdkharvester;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
+import cz.incad.kramerius.FedoraAccess;
+import cz.incad.kramerius.impl.FedoraAccessImpl;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -28,6 +30,8 @@ import cz.incad.kramerius.processes.annotations.Process;
 import cz.incad.kramerius.processes.impl.ProcessStarter;
 import cz.incad.kramerius.utils.StringUtils;
 import cz.incad.kramerius.utils.conf.KConfiguration;
+import cz.incad.kramerius.virtualcollections.VirtualCollection;
+import cz.incad.kramerius.virtualcollections.VirtualCollectionsManager;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
@@ -47,6 +51,7 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import javax.ws.rs.core.MediaType;
 import javax.xml.parsers.DocumentBuilder;
@@ -78,15 +83,18 @@ public class CDKImportProcess {
     int total;
     int processed;
     String updateTimeFile = "cdkimport.time";
-    java.util.logging.Logger logger = java.util.logging.Logger.getLogger(K4ReplicationProcess.class.getName());
+    static java.util.logging.Logger logger = java.util.logging.Logger.getLogger(CDKImportProcess.class.getName());
     XPathFactory factory = XPathFactory.newInstance();
     XPath xpath;
     XPathExpression expr;
     String harvestUrl;
     String k4Url;
+    String sourceName;
+    String collectionPid;
     String userName;
     String pswd;
     Transformer transformer;
+    FedoraAccess fa;
     
     protected Configuration config;
 
@@ -117,19 +125,51 @@ public class CDKImportProcess {
         }
         return from;
     }
+    
+    private void setVirtualCollection() throws IOException{
+        VirtualCollection vc =  VirtualCollectionsManager.getVirtualCollectionByName(fa, sourceName, languageCodes());
+        if(vc != null){
+            this.collectionPid = vc.getPid();
+            logger.log(Level.INFO, this.collectionPid);
+        }else{
+            this.collectionPid = VirtualCollectionsManager.create(fa);
+            String[] langs = config.getStringArray("interface.languages");
+            logger.log(Level.INFO, langs.toString());
+            for (int i = 0; i < langs.length; i++) {
+                String lang = langs[++i];
+                VirtualCollectionsManager.modifyDatastream(collectionPid, lang, "text_"+lang, fa, config.getString("_fedoraTomcatHost")+"/search");
+            }
+        }
+    }
+    
+    private ArrayList languageCodes(){
+        ArrayList l = new ArrayList<String>();
+        String[] langs = config.getStringArray("interface.languages");
+        for (int i = 0; i < langs.length; i++) {
+                    String lang = langs[++i];
+            l.add(lang);
+        }
+        return l;
+    }
 
     public void start(String url, String name, String userName, String pswd) throws Exception {
 
+        
+        fa = new FedoraAccessImpl(KConfiguration.getInstance(), null);
+        config = KConfiguration.getInstance().getConfiguration();
         this.updateTimeFile = name + ".time";
         this.k4Url = url;
+        this.sourceName = name;
+        setVirtualCollection();
         this.userName = userName;
         this.pswd = pswd;
+        
+        
         
         TransformerFactory tfactory = TransformerFactory.newInstance();
         InputStream stylesheet = this.getClass().getResourceAsStream("/cz/incad/cdk/cdkharvester/tr.xsl");
         StreamSource xslt = new StreamSource(stylesheet);
         transformer = tfactory.newTransformer(xslt);
-        config = KConfiguration.getInstance().getConfiguration();
         factory = XPathFactory.newInstance();
         xpath = factory.newXPath();
 
@@ -247,7 +287,7 @@ public class CDKImportProcess {
     private void replicate(String pid) throws Exception {
         //get foxml from origin
         // https://xxx.xxx.xxx.xxx/search/api/v4.6/cdk/uuid:1a43499e-c953-11df-84b1-001b63bd97ba/foxml
-        String url = k4Url + "api/" + API_VERSION + "/cdk/" + pid + "/foxml";
+        String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/foxml";
         logger.log(Level.INFO, "get foxml from origin {0}...", url);
         
         Client c = Client.create();
@@ -256,8 +296,12 @@ public class CDKImportProcess {
         InputStream t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
         
         //import foxml to dest
-        //ingest(t, pid);
-        //index(pid);
+        ingest(t, pid);
+        
+        //add collection
+        //VirtualCollectionsManager.addPidToCollection(pid, collectionPid, fa);
+        
+        index(pid);
     }
     
     private void ingest(InputStream foxml, String pid) throws Exception{
@@ -269,14 +313,16 @@ public class CDKImportProcess {
     }
     
     private void index(String pid) throws Exception{
-        String url = k4Url + "api/" + API_VERSION + "/cdk/" + pid + "/solrxml";
+        String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/solrxml";
         Client c = Client.create();
         WebResource r = c.resource(url);
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
         InputStream t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
         
         StreamResult destStream = new StreamResult(new StringWriter());
+        transformer.setParameter("sourceName", sourceName);
         transformer.transform(new StreamSource(t), destStream);
+        
         StringWriter sw = (StringWriter) destStream.getWriter();
         //logger.info(sw.toString());
         postData(new StringReader(sw.toString()), new StringBuilder());
@@ -290,7 +336,7 @@ public class CDKImportProcess {
     private void postData(Reader data, StringBuilder output)
             throws Exception {
         URL solrUrl = null;
-        String solrUrlString = config.getString("IndexBase") + "/update";
+        String solrUrlString = config.getString("solrHost") + "/update";
         try {
             solrUrl = new URL(solrUrlString);
         } catch (MalformedURLException e) {

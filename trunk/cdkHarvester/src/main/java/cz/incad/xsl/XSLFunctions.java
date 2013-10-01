@@ -18,23 +18,10 @@ import java.util.Random;
 public class XSLFunctions {
 
     UTFSort utf_sort;
-    List<String> dict;
 
     public XSLFunctions() throws IOException {
         utf_sort = new UTFSort();
         utf_sort.init();
-
-
-        BufferedReader reader = new BufferedReader(new FileReader("dict.txt"));
-        dict = new ArrayList<String>();
-
-        String line = reader.readLine();
-
-        while (line != null) {
-            dict.add(line);
-            line = reader.readLine();
-        }
-
 
     }
 
@@ -44,17 +31,6 @@ public class XSLFunctions {
 
     public String getDimensions(String pid) throws Exception {
         return FileDataStore.getDimensions(pid);
-    }
-
-    public String fillOCR() {
-
-        StringBuilder sb = new StringBuilder();
-        Random r = new Random();
-        for (int i = 0; i < 100; i++) {
-            String randomString = dict.get(r.nextInt(dict.size() - 1));
-            sb.append(randomString).append(" ");
-        }
-        return sb.toString();
     }
     
     public int randomDate(){

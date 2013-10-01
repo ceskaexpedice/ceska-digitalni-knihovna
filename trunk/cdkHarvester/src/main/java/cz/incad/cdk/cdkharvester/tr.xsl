@@ -11,6 +11,7 @@
          syntax recommendation http://www.w3.org/TR/xslt 
     -->
     <xsl:variable name="xslfunctions" select="exts:new()" />
+    <xsl:param name="collectionPid" select="collectionPid" />
     <xsl:template match="/">
         <add>
             <xsl:for-each select="/response/result/doc">
@@ -19,28 +20,35 @@
                     <field>
                         <xsl:attribute name="name">
                             <xsl:value-of  select="@name"/>
-                            <xsl:value-of select="." />
                         </xsl:attribute>
+                        <xsl:value-of select="." />
                     </field>
                 </xsl:for-each>
                 <xsl:for-each select="int">
-                    <field><xsl:attribute name="name"><xsl:value-of  select="@name"/><xsl:value-of select="." /></xsl:attribute></field>
+                    <field><xsl:attribute name="name"><xsl:value-of  select="@name"/></xsl:attribute><xsl:value-of select="." /></field>
                 </xsl:for-each>
                 <xsl:for-each select="date">
-                    <field><xsl:attribute name="name"><xsl:value-of  select="@name"/><xsl:value-of select="." /></xsl:attribute></field>
+                    <field><xsl:attribute name="name"><xsl:value-of  select="@name"/></xsl:attribute><xsl:value-of select="." /></field>
                 </xsl:for-each>
                 <xsl:for-each select="bool">
-                    <field><xsl:attribute name="name"><xsl:value-of  select="@name"/><xsl:value-of select="." /></xsl:attribute></field>
+                    <field><xsl:attribute name="name"><xsl:value-of  select="@name"/></xsl:attribute><xsl:value-of select="." /></field>
                 </xsl:for-each>
-                <xsl:for-each select="arr">
-                    <field><xsl:attribute name="name"><xsl:value-of  select="@name"/><xsl:value-of select="./str" /></xsl:attribute></field>
-                    <field><xsl:attribute name="name"><xsl:value-of  select="@name"/><xsl:value-of select="./int" /></xsl:attribute></field>
+                <xsl:for-each select="arr/str">
+                    <xsl:choose>
+                        <xsl:when test="../@name = 'collection'">
+                            <field><xsl:attribute name="name"><xsl:value-of  select="../@name"/></xsl:attribute><xsl:value-of select="." /></field>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <field><xsl:attribute name="name"><xsl:value-of  select="../@name"/></xsl:attribute><xsl:value-of select="." /></field>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                    
+                </xsl:for-each>
+                <xsl:for-each select="arr/int">
+                    <field><xsl:attribute name="name"><xsl:value-of  select="../@name"/></xsl:attribute><xsl:value-of select="." /></field>
                 </xsl:for-each>
                 
                 <xsl:variable name="title"><xsl:value-of select="str[@name='dc.title']" /></xsl:variable>
-                <field name="dc.title"><xsl:value-of select="$title" /></field>
-                <field name="title_sort"><xsl:value-of select="str[@name='title_sort']" /></field>
-                
                 
                 <xsl:for-each select="arr[@name='dc.creator']">
                     <field name="browse_autor" ><xsl:value-of select="exts:prepareCzech($xslfunctions, ./str)"/>##<xsl:value-of select="./str" /></field>
@@ -49,7 +57,7 @@
                 <field name="browse_title" >
                     <xsl:value-of select="exts:prepareCzech($xslfunctions, $title)"/>##<xsl:value-of select="$title"/>
                 </field>
-                
+                <field name="collection"><xsl:value-of select="$collectionPid" /></field>
             </doc>
             </xsl:for-each>
         </add>
