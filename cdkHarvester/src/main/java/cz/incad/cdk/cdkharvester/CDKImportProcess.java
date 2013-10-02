@@ -230,8 +230,10 @@ public class CDKImportProcess {
             start = start + ROWS;
             while (start < numDocs) {
                 getDocs(start);
+                commit();
                 start = start + ROWS;
             }
+            commit();
             total += numDocs;
             logger.log(Level.INFO, "total: {0}", total);
         }
@@ -286,21 +288,20 @@ public class CDKImportProcess {
 
     private void replicate(String pid) throws Exception {
         //get foxml from origin
-        // https://xxx.xxx.xxx.xxx/search/api/v4.6/cdk/uuid:1a43499e-c953-11df-84b1-001b63bd97ba/foxml
-        String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/foxml";
+        // https://xxx.xxx.xxx.xxx/search/api/v4.6/cdk/uuid:1a43499e-c953-11df-84b1-001b63bd97ba/foxml?collection=vc:111-222-xxx
+        String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/foxml?collection="+collectionPid;
         logger.log(Level.INFO, "get foxml from origin {0}...", url);
-        
         Client c = Client.create();
         WebResource r = c.resource(url);
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
         InputStream t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
         
         //import foxml to dest
+        logger.log(Level.INFO, "ingesting {0}...", pid);
         ingest(t, pid);
         
-        //add collection
-        //VirtualCollectionsManager.addPidToCollection(pid, collectionPid, fa);
         
+        logger.log(Level.INFO, "indexing {0}...", pid);
         index(pid);
     }
     
@@ -308,7 +309,7 @@ public class CDKImportProcess {
         //logger.info("ingesting '"+foxmlfile.getAbsolutePath()+"'");
         Import.initialize(KConfiguration.getInstance().getProperty("ingest.user"), KConfiguration.getInstance().getProperty("ingest.password"));
         
-        Import.ingest(foxml, pid, null);  //TODO třetí parametr má být List<String>, inicializovaný na začátku této fáze a předaný třetí fázi, kde se budou třídit vazby
+        Import.ingest(foxml, pid, null);  
         
     }
     
@@ -320,7 +321,7 @@ public class CDKImportProcess {
         InputStream t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
         
         StreamResult destStream = new StreamResult(new StringWriter());
-        transformer.setParameter("sourceName", sourceName);
+        transformer.setParameter("collectionPid", collectionPid);
         transformer.transform(new StreamSource(t), destStream);
         
         StringWriter sw = (StringWriter) destStream.getWriter();
