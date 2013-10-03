@@ -18,6 +18,7 @@ package cz.incad.cdk.cdkharvester;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
+import cz.incad.kramerius.Constants;
 import cz.incad.kramerius.FedoraAccess;
 import cz.incad.kramerius.impl.FedoraAccessImpl;
 import java.io.File;
@@ -126,6 +127,22 @@ public class CDKImportProcess {
         return from;
     }
     
+    private String updateFile(String name){
+        return xslsFolder().getAbsolutePath() + File.separator + name + ".time";
+    }
+    
+    private File xslsFolder() {
+        String dirName = Constants.WORKING_DIR + File.separator + "cdk";
+        File dir = new File(dirName);
+        if (!dir.exists()) {
+            boolean mkdirs = dir.mkdirs();
+            if (!mkdirs) {
+                throw new RuntimeException("cannot create dir '" + dir.getAbsolutePath() + "'");
+            }
+        }
+        return dir;
+    }
+    
     private void setVirtualCollection() throws IOException{
         VirtualCollection vc =  VirtualCollectionsManager.getVirtualCollectionByName(fa, sourceName, languageCodes());
         if(vc != null){
@@ -137,7 +154,7 @@ public class CDKImportProcess {
             logger.log(Level.INFO, langs.toString());
             for (int i = 0; i < langs.length; i++) {
                 String lang = langs[++i];
-                VirtualCollectionsManager.modifyDatastream(collectionPid, lang, "text_"+lang, fa, config.getString("_fedoraTomcatHost")+"/search");
+                VirtualCollectionsManager.modifyDatastream(collectionPid, lang, "text_"+lang, fa, config.getString("_fedoraTomcatHost")+"/search/vc");
             }
         }
     }
@@ -157,7 +174,7 @@ public class CDKImportProcess {
         
         fa = new FedoraAccessImpl(KConfiguration.getInstance(), null);
         config = KConfiguration.getInstance().getConfiguration();
-        this.updateTimeFile = name + ".time";
+        this.updateTimeFile = updateFile(name);
         this.k4Url = url;
         this.sourceName = name;
         setVirtualCollection();
@@ -179,6 +196,7 @@ public class CDKImportProcess {
         String to = formatter.format(date);
         logger.log(Level.INFO, "Current index time: {0}", to);
         String from = getLastUpdateTime();
+        Import.initialize(KConfiguration.getInstance().getProperty("ingest.user"), KConfiguration.getInstance().getProperty("ingest.password"));
         getDocs(url, from);
 
         //writeUpdateTime(to);
@@ -307,7 +325,7 @@ public class CDKImportProcess {
     
     private void ingest(InputStream foxml, String pid) throws Exception{
         //logger.info("ingesting '"+foxmlfile.getAbsolutePath()+"'");
-        Import.initialize(KConfiguration.getInstance().getProperty("ingest.user"), KConfiguration.getInstance().getProperty("ingest.password"));
+        
         
         Import.ingest(foxml, pid, null);  
         
