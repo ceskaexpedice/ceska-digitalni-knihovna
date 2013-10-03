@@ -12,10 +12,14 @@
     -->
     <xsl:variable name="xslfunctions" select="exts:new()" />
     <xsl:param name="collectionPid" select="collectionPid" />
+    <xsl:variable name="solr_url" select="'http://localhost:8080/solr/select'" />
     <xsl:template match="/">
         <add>
             <xsl:for-each select="/response/result/doc">
             <doc>
+                <xsl:variable name="search_url">
+                   <xsl:value-of select="$solr_url"/>?q=PID:"<xsl:value-of select="./str[@name='PID']"/>"
+                </xsl:variable>
                 <xsl:for-each select="str">
                     <field>
                         <xsl:attribute name="name">
@@ -57,10 +61,30 @@
                 <field name="browse_title" >
                     <xsl:value-of select="exts:prepareCzech($xslfunctions, $title)"/>##<xsl:value-of select="$title"/>
                 </field>
-                <field name="collection"><xsl:value-of select="$collectionPid" /></field>
+                <!--
+                <xsl:call-template name="collection">
+                    <xsl:with-param name="search_url" select="$search_url" />
+                </xsl:call-template>
+                -->
+                <field name="collection" update="add"><xsl:value-of select="$collectionPid" /></field>
             </doc>
             </xsl:for-each>
         </add>
+    </xsl:template>
+    
+    <xsl:template name="collection">
+        <xsl:param name="search_url"/>
+        <xsl:variable name="orig" select="document($search_url)" />
+        <xsl:for-each select="$orig/response/result/doc">
+
+            <xsl:for-each select="arr[@name='collection']/str">
+                <xsl:if test="not(./text()=$collectionPid)">
+                    <field name="collection" ><xsl:value-of select="." /></field>
+                </xsl:if>
+            </xsl:for-each>
+            <field name="collection"><xsl:value-of select="$collectionPid" /></field>
+
+        </xsl:for-each>
     </xsl:template>
 
 </xsl:stylesheet>
