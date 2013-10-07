@@ -175,13 +175,13 @@ public class CDKImportProcess {
         fa = new FedoraAccessImpl(KConfiguration.getInstance(), null);
         config = KConfiguration.getInstance().getConfiguration();
         this.updateTimeFile = updateFile(name);
+        String from = getLastUpdateTime();
+        logger.log(Level.INFO, "Last index time: {0}", from);
         this.k4Url = url;
         this.sourceName = name;
         setVirtualCollection();
         this.userName = userName;
         this.pswd = pswd;
-        
-        
         
         TransformerFactory tfactory = TransformerFactory.newInstance();
         InputStream stylesheet = this.getClass().getResourceAsStream("/cz/incad/cdk/cdkharvester/tr.xsl");
@@ -195,7 +195,6 @@ public class CDKImportProcess {
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'"); //2013-09-25T06:30:50.172Z
         String to = formatter.format(date);
         logger.log(Level.INFO, "Current index time: {0}", to);
-        String from = getLastUpdateTime();
         Import.initialize(KConfiguration.getInstance().getProperty("ingest.user"), KConfiguration.getInstance().getProperty("ingest.password"));
         getDocs(url, from);
 
