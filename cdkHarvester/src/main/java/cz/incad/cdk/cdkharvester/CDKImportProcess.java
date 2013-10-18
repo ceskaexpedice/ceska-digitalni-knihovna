@@ -96,7 +96,6 @@ public class CDKImportProcess {
     String pswd;
     Transformer transformer;
     FedoraAccess fa;
-    
     protected Configuration config;
 
     @Process
@@ -126,11 +125,11 @@ public class CDKImportProcess {
         }
         return from;
     }
-    
-    private String updateFile(String name){
+
+    private String updateFile(String name) {
         return xslsFolder().getAbsolutePath() + File.separator + name + ".time";
     }
-    
+
     private File xslsFolder() {
         String dirName = Constants.WORKING_DIR + File.separator + "cdk";
         File dir = new File(dirName);
@@ -142,36 +141,33 @@ public class CDKImportProcess {
         }
         return dir;
     }
-    
-    private void setVirtualCollection() throws IOException{
-        VirtualCollection vc =  VirtualCollectionsManager.getVirtualCollectionByName(fa, sourceName, languageCodes());
-        if(vc != null){
+
+    private void setVirtualCollection() throws IOException {
+        VirtualCollection vc = VirtualCollectionsManager.getVirtualCollectionByName(fa, sourceName, languageCodes());
+        if (vc != null) {
             this.collectionPid = vc.getPid();
             logger.log(Level.INFO, this.collectionPid);
-        }else{
+        } else {
             this.collectionPid = VirtualCollectionsManager.create(fa);
             String[] langs = config.getStringArray("interface.languages");
             logger.log(Level.INFO, langs.toString());
             for (int i = 0; i < langs.length; i++) {
                 String lang = langs[++i];
-                VirtualCollectionsManager.modifyDatastream(collectionPid, lang, "text_"+lang, fa, config.getString("_fedoraTomcatHost")+"/search/vc");
+                VirtualCollectionsManager.modifyDatastream(collectionPid, lang, sourceName, fa, config.getString("_fedoraTomcatHost") + "/search/vc");
             }
         }
     }
-    
-    private ArrayList languageCodes(){
+
+    private ArrayList languageCodes() {
         ArrayList l = new ArrayList<String>();
         String[] langs = config.getStringArray("interface.languages");
         for (int i = 0; i < langs.length; i++) {
-                    String lang = langs[++i];
-            l.add(lang);
+            l.add(langs[++i]);
         }
         return l;
     }
 
     public void start(String url, String name, String userName, String pswd) throws Exception {
-
-        
         fa = new FedoraAccessImpl(KConfiguration.getInstance(), null);
         config = KConfiguration.getInstance().getConfiguration();
         this.updateTimeFile = updateFile(name);
@@ -182,7 +178,7 @@ public class CDKImportProcess {
         setVirtualCollection();
         this.userName = userName;
         this.pswd = pswd;
-        
+
         TransformerFactory tfactory = TransformerFactory.newInstance();
         InputStream stylesheet = this.getClass().getResourceAsStream("/cz/incad/cdk/cdkharvester/tr.xsl");
         StreamSource xslt = new StreamSource(stylesheet);
@@ -202,9 +198,9 @@ public class CDKImportProcess {
 
         logger.log(Level.INFO, "Finished. Total documents processed: {0}", total);
     }
-    
+
     private void getDocs(String k4url, String date) throws Exception {
-        int start =0;
+        int start = 0;
 //        harvestUrl = k4url + "/searchXSL.jsp?asis=true&collapsed=false&facet=false&hl=false&fl=PID,modified_date&sort=modified_date%20asc&q=" + URIUtil.encodeQuery(q)
 //                + "&rows=" + ROWS;
         harvestUrl = k4url + "/api/v4.6/cdk/prepare?date=" + URIUtil.encodeQuery(date)
@@ -255,20 +251,20 @@ public class CDKImportProcess {
             logger.log(Level.INFO, "total: {0}", total);
         }
     }
-    
+
     private void getDocs(int start) throws Exception {
         String urlStr = harvestUrl + "&offset=" + start;
         logger.log(Level.INFO, "urlStr: {0}", urlStr);
 //        java.net.URL url = new java.net.URL(urlStr);
         DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         org.w3c.dom.Document solrDom;
-        
-        
+
+
         Client c = Client.create();
         WebResource r = c.resource(urlStr);
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
         InputStream is;
-        
+
         try {
             is = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
             solrDom = builder.parse(is);
@@ -292,10 +288,10 @@ public class CDKImportProcess {
                 String pid = node.getFirstChild().getNodeValue();
                 String to = node.getNextSibling().getFirstChild().getNodeValue();
                 replicate(pid);
-                if(to!=null){
+                if (to != null) {
                     writeUpdateTime(to);
                 }
-                
+
                 processed++;
             }
             logger.log(Level.INFO, "{0} processed", processed);
@@ -306,55 +302,55 @@ public class CDKImportProcess {
     private void replicate(String pid) throws Exception {
         //get foxml from origin
         // https://xxx.xxx.xxx.xxx/search/api/v4.6/cdk/uuid:1a43499e-c953-11df-84b1-001b63bd97ba/foxml?collection=vc:111-222-xxx
-        String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/foxml?collection="+collectionPid;
+        String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/foxml?collection=" + collectionPid;
         logger.log(Level.INFO, "get foxml from origin {0}...", url);
         Client c = Client.create();
         WebResource r = c.resource(url);
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
         InputStream t;
-        try{
+        try {
             t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
-        }catch(Exception ex){
+        } catch (Exception ex) {
             logger.log(Level.WARNING, "Call to {0} failed. Retrying...", url);
             t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
         }
         //import foxml to dest
         logger.log(Level.INFO, "ingesting {0}...", pid);
         ingest(t, pid);
-        
-        
+
+
         logger.log(Level.INFO, "indexing {0}...", pid);
         index(pid);
     }
-    
-    private void ingest(InputStream foxml, String pid) throws Exception{
+
+    private void ingest(InputStream foxml, String pid) throws Exception {
         //logger.info("ingesting '"+foxmlfile.getAbsolutePath()+"'");
-        
-        
-        Import.ingest(foxml, pid, null);  
-        
+
+
+        Import.ingest(foxml, pid, null);
+
     }
-    
-    private void index(String pid) throws Exception{
+
+    private void index(String pid) throws Exception {
         String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/solrxml";
         Client c = Client.create();
         WebResource r = c.resource(url);
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
         InputStream t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
-        
+
         StreamResult destStream = new StreamResult(new StringWriter());
         transformer.setParameter("collectionPid", collectionPid);
         transformer.transform(new StreamSource(t), destStream);
-        
+
         StringWriter sw = (StringWriter) destStream.getWriter();
         //logger.info(sw.toString());
         postData(new StringReader(sw.toString()), new StringBuilder());
-        
+
     }
-    
-        /**
-     * Reads data from the data reader and posts it to solr,
-     * writes the response to output
+
+    /**
+     * Reads data from the data reader and posts it to solr, writes the response
+     * to output
      */
     private void postData(Reader data, StringBuilder output)
             throws Exception {
@@ -440,8 +436,6 @@ public class CDKImportProcess {
             }
         }
     }
-    
-    
 
     private void commit() throws java.rmi.RemoteException, Exception {
         String s = "<commit softCommit=\"false\" />";
@@ -464,8 +458,8 @@ public class CDKImportProcess {
     }
 
     /**
-     * Pipes everything from the reader to the writer via a buffer
-     * except lines starting with '<?'
+     * Pipes everything from the reader to the writer via a buffer except lines
+     * starting with '<?'
      */
     private static void pipeString(Reader reader, StringBuilder writer) throws IOException {
         char[] buf = new char[1024];
