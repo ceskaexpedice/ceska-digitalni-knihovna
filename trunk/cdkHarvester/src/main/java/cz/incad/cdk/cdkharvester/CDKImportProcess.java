@@ -311,8 +311,13 @@ public class CDKImportProcess {
         Client c = Client.create();
         WebResource r = c.resource(url);
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
-        InputStream t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
-        
+        InputStream t;
+        try{
+            t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
+        }catch(Exception ex){
+            logger.log(Level.WARNING, "Call to {0} failed. Retrying...", url);
+            t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
+        }
         //import foxml to dest
         logger.log(Level.INFO, "ingesting {0}...", pid);
         ingest(t, pid);
