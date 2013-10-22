@@ -77,8 +77,8 @@
         <xsl:variable name="orig" select="document($search_url)" />
         <xsl:for-each select="$orig/response/result/doc">
 
-            <xsl:for-each select="arr[@name='collection']/str">
-                <xsl:if test="not(./text()=$collectionPid)">
+            <xsl:for-each select="arr[@name='collection']/str[.!=$collectionPid]">
+                <xsl:if test="not(./text()=normalize-space($collectionPid))">
                     <field name="collection" ><xsl:value-of select="." /></field>
                 </xsl:if>
             </xsl:for-each>
