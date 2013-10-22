@@ -21,6 +21,7 @@ import com.sun.jersey.api.client.WebResource;
 import cz.incad.kramerius.Constants;
 import cz.incad.kramerius.FedoraAccess;
 import cz.incad.kramerius.impl.FedoraAccessImpl;
+import cz.incad.kramerius.processes.States;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -29,10 +30,7 @@ import java.util.logging.Level;
 import cz.incad.kramerius.processes.annotations.ParameterName;
 import cz.incad.kramerius.processes.annotations.Process;
 import cz.incad.kramerius.processes.impl.ProcessStarter;
-import cz.incad.kramerius.utils.StringUtils;
 import cz.incad.kramerius.utils.conf.KConfiguration;
-import cz.incad.kramerius.virtualcollections.VirtualCollection;
-import cz.incad.kramerius.virtualcollections.VirtualCollectionsManager;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
@@ -65,6 +63,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
+import net.sf.json.JSONObject;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.httpclient.util.URIUtil;
 import org.kramerius.Import;
@@ -84,6 +83,7 @@ public class CDKImportProcess {
     int total;
     int processed;
     String updateTimeFile = "cdkimport.time";
+    String uuidFile = "cdkimport.uuid";
     static java.util.logging.Logger logger = java.util.logging.Logger.getLogger(CDKImportProcess.class.getName());
     XPathFactory factory = XPathFactory.newInstance();
     XPath xpath;
@@ -99,12 +99,43 @@ public class CDKImportProcess {
     protected Configuration config;
 
     @Process
-    public static void cdkImport(@ParameterName("url") String url, @ParameterName("name") String name, @ParameterName("username") String userName, @ParameterName("pswd") String pswd) throws Exception {
+    public static void cdkImport(@ParameterName("url") String url, @ParameterName("name") String name, @ParameterName("collectionPid") String collectionPid, @ParameterName("username") String userName, @ParameterName("pswd") String pswd) throws Exception {
 
         ProcessStarter.updateName("Import CDK from " + name);
+        
+        
+        
         CDKImportProcess p = new CDKImportProcess();
-        p.start(url, name, userName, pswd);
+        p.start(url, name, collectionPid, userName, pswd);
 
+    }
+    
+    private String getStatus(String uuid) throws Exception{
+        System.out.println(config.getString("_fedoraTomcatHost") + "/search/api/v4.6/processes/" + uuid);
+        Client c = Client.create();
+        WebResource r = c.resource(config.getString("_fedoraTomcatHost") + "/search/api/v4.6/processes/" + uuid);
+        r.addFilter(new BasicAuthenticationClientFilter(
+                config.getString("cdk.krameriusUser"), 
+                config.getString("cdk.krameriusPwd")));
+        String t = r.accept(MediaType.APPLICATION_JSON).get(String.class);
+        System.out.println(t);
+        JSONObject j = JSONObject.fromObject(t);
+        return j.getString("state");
+    }
+
+    private void writeUuid(String s) throws FileNotFoundException, IOException {
+        File dateFile = new File(uuidFile);
+        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(dateFile)));
+        out.write(s);
+        out.close();
+    }
+
+    private String getLastUuid() throws FileNotFoundException, IOException {
+        if ((new File(uuidFile)).exists()) {
+            BufferedReader in = new BufferedReader(new FileReader(uuidFile));
+            return in.readLine();
+        } 
+        return "";
     }
 
     private void writeUpdateTime(String to) throws FileNotFoundException, IOException {
@@ -130,6 +161,10 @@ public class CDKImportProcess {
         return xslsFolder().getAbsolutePath() + File.separator + name + ".time";
     }
 
+    private String uuidFile(String name) {
+        return xslsFolder().getAbsolutePath() + File.separator + name + ".uuid";
+    }
+
     private File xslsFolder() {
         String dirName = Constants.WORKING_DIR + File.separator + "cdk";
         File dir = new File(dirName);
@@ -142,40 +177,53 @@ public class CDKImportProcess {
         return dir;
     }
 
-    private void setVirtualCollection() throws IOException {
-        VirtualCollection vc = VirtualCollectionsManager.getVirtualCollectionByName(fa, sourceName, languageCodes());
-        if (vc != null) {
-            this.collectionPid = vc.getPid();
-            logger.log(Level.INFO, this.collectionPid);
-        } else {
-            this.collectionPid = VirtualCollectionsManager.create(fa);
-            String[] langs = config.getStringArray("interface.languages");
-            logger.log(Level.INFO, langs.toString());
-            for (int i = 0; i < langs.length; i++) {
-                String lang = langs[++i];
-                VirtualCollectionsManager.modifyDatastream(collectionPid, lang, sourceName, fa, config.getString("_fedoraTomcatHost") + "/search/vc");
-            }
-        }
-    }
+//    private void setVirtualCollection() throws IOException {
+//        VirtualCollection vc = VirtualCollectionsManager.getVirtualCollectionByName(fa, sourceName, languageCodes());
+//        if (vc != null) {
+//            this.collectionPid = vc.getPid();
+//            logger.log(Level.INFO, this.collectionPid);
+//        } else {
+//            this.collectionPid = VirtualCollectionsManager.create(fa);
+//            String[] langs = config.getStringArray("interface.languages");
+//            logger.log(Level.INFO, langs.toString());
+//            for (int i = 0; i < langs.length; i++) {
+//                String lang = langs[++i];
+//                VirtualCollectionsManager.modifyDatastream(collectionPid, lang, sourceName, fa, config.getString("_fedoraTomcatHost") + "/search/vc");
+//            }
+//        }
+//    }
 
-    private ArrayList languageCodes() {
-        ArrayList l = new ArrayList<String>();
-        String[] langs = config.getStringArray("interface.languages");
-        for (int i = 0; i < langs.length; i++) {
-            l.add(langs[++i]);
-        }
-        return l;
-    }
+//    private ArrayList languageCodes() {
+//        ArrayList l = new ArrayList<String>();
+//        String[] langs = config.getStringArray("interface.languages");
+//        for (int i = 0; i < langs.length; i++) {
+//            l.add(langs[++i]);
+//        }
+//        return l;
+//    }
 
-    public void start(String url, String name, String userName, String pswd) throws Exception {
-        fa = new FedoraAccessImpl(KConfiguration.getInstance(), null);
+    public void start(String url, String name, String collectionPid, String userName, String pswd) throws Exception {
+        
+        
         config = KConfiguration.getInstance().getConfiguration();
+        
+        this.uuidFile = uuidFile(name);
+        String uuid = getLastUuid();
+        
+        if(uuid!=null && !uuid.equals("") && !States.notRunningState(States.valueOf(getStatus(uuid)))){
+            logger.log(Level.INFO, "Process yet active. Finish.");
+            return;
+        }
+        String actualUUID = System.getProperty(ProcessStarter.UUID_KEY);
+        writeUuid(actualUUID);
+        fa = new FedoraAccessImpl(KConfiguration.getInstance(), null);
         this.updateTimeFile = updateFile(name);
         String from = getLastUpdateTime();
         logger.log(Level.INFO, "Last index time: {0}", from);
         this.k4Url = url;
         this.sourceName = name;
-        setVirtualCollection();
+        this.collectionPid = collectionPid;
+//        setVirtualCollection();
         this.userName = userName;
         this.pswd = pswd;
 
@@ -263,6 +311,8 @@ public class CDKImportProcess {
         Client c = Client.create();
         WebResource r = c.resource(urlStr);
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
+        c.setConnectTimeout(2000);
+        c.setReadTimeout(20000);
         InputStream is;
 
         try {
@@ -305,6 +355,8 @@ public class CDKImportProcess {
         String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/foxml?collection=" + collectionPid;
         logger.log(Level.INFO, "get foxml from origin {0}...", url);
         Client c = Client.create();
+        c.setConnectTimeout(2000);
+        c.setReadTimeout(20000);
         WebResource r = c.resource(url);
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
         InputStream t;
@@ -315,7 +367,7 @@ public class CDKImportProcess {
             t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
         }
         //import foxml to dest
-        logger.log(Level.INFO, "ingesting {0}...", pid);
+        logger.log(Level.FINE, "ingesting {0}...", pid);
         ingest(t, pid);
 
 
@@ -324,16 +376,14 @@ public class CDKImportProcess {
     }
 
     private void ingest(InputStream foxml, String pid) throws Exception {
-        //logger.info("ingesting '"+foxmlfile.getAbsolutePath()+"'");
-
-
         Import.ingest(foxml, pid, null);
-
     }
 
     private void index(String pid) throws Exception {
         String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/solrxml";
         Client c = Client.create();
+        c.setConnectTimeout(2000);
+        c.setReadTimeout(20000);
         WebResource r = c.resource(url);
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
         InputStream t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
