@@ -18,7 +18,6 @@ package cz.incad.cdk.cdkharvester;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
-import static cz.incad.cdk.cdkharvester.CDKImportProcess.logger;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -34,7 +33,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
-import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.util.URIUtil;
 import org.kramerius.replications.BasicAuthenticationClientFilter;
 import org.w3c.dom.Node;
