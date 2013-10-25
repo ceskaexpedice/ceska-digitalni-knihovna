@@ -48,10 +48,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.Map;
 import javax.ws.rs.core.MediaType;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -102,20 +99,18 @@ public class CDKImportProcess {
     public static void cdkImport(@ParameterName("url") String url, @ParameterName("name") String name, @ParameterName("collectionPid") String collectionPid, @ParameterName("username") String userName, @ParameterName("pswd") String pswd) throws Exception {
 
         ProcessStarter.updateName("Import CDK from " + name);
-        
-        
-        
+
         CDKImportProcess p = new CDKImportProcess();
         p.start(url, name, collectionPid, userName, pswd);
 
     }
-    
-    private String getStatus(String uuid) throws Exception{
+
+    private String getStatus(String uuid) throws Exception {
         System.out.println(config.getString("_fedoraTomcatHost") + "/search/api/v4.6/processes/" + uuid);
         Client c = Client.create();
         WebResource r = c.resource(config.getString("_fedoraTomcatHost") + "/search/api/v4.6/processes/" + uuid);
         r.addFilter(new BasicAuthenticationClientFilter(
-                config.getString("cdk.krameriusUser"), 
+                config.getString("cdk.krameriusUser"),
                 config.getString("cdk.krameriusPwd")));
         String t = r.accept(MediaType.APPLICATION_JSON).get(String.class);
         System.out.println(t);
@@ -134,7 +129,7 @@ public class CDKImportProcess {
         if ((new File(uuidFile)).exists()) {
             BufferedReader in = new BufferedReader(new FileReader(uuidFile));
             return in.readLine();
-        } 
+        }
         return "";
     }
 
@@ -192,7 +187,6 @@ public class CDKImportProcess {
 //            }
 //        }
 //    }
-
 //    private ArrayList languageCodes() {
 //        ArrayList l = new ArrayList<String>();
 //        String[] langs = config.getStringArray("interface.languages");
@@ -201,16 +195,15 @@ public class CDKImportProcess {
 //        }
 //        return l;
 //    }
-
     public void start(String url, String name, String collectionPid, String userName, String pswd) throws Exception {
-        
-        
+
+
         config = KConfiguration.getInstance().getConfiguration();
-        
+
         this.uuidFile = uuidFile(name);
         String uuid = getLastUuid();
-        
-        if(uuid!=null && !uuid.equals("") && !States.notRunningState(States.valueOf(getStatus(uuid)))){
+
+        if (uuid != null && !uuid.equals("") && !States.notRunningState(States.valueOf(getStatus(uuid)))) {
             logger.log(Level.INFO, "Process yet active. Finish.");
             return;
         }
@@ -235,128 +228,35 @@ public class CDKImportProcess {
         xpath = factory.newXPath();
 
         total = 0;
-        Date date = new Date();
-        DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'"); //2013-09-25T06:30:50.172Z
-        String to = formatter.format(date);
-        logger.log(Level.INFO, "Current index time: {0}", to);
         Import.initialize(KConfiguration.getInstance().getProperty("ingest.user"), KConfiguration.getInstance().getProperty("ingest.password"));
-        getDocs(url, from);
-
-        //writeUpdateTime(to);
+        //getDocs(url, from);
+        getDocs(from);
 
         logger.log(Level.INFO, "Finished. Total documents processed: {0}", total);
     }
 
-    private void getDocs(String k4url, String date) throws Exception {
-        int start = 0;
-//        harvestUrl = k4url + "/searchXSL.jsp?asis=true&collapsed=false&facet=false&hl=false&fl=PID,modified_date&sort=modified_date%20asc&q=" + URIUtil.encodeQuery(q)
-//                + "&rows=" + ROWS;
-        harvestUrl = k4url + "/api/v4.6/cdk/prepare?date=" + URIUtil.encodeQuery(date)
-                + "&rows=" + ROWS;
-        String urlStr = harvestUrl + "&offset=0";
-        logger.log(Level.INFO, "urlStr: {0}", urlStr);
-//        java.net.URL url = new java.net.URL(urlStr);
-        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        org.w3c.dom.Document solrDom;
-        Client c = Client.create();
-        WebResource r = c.resource(urlStr);
-        r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
-        InputStream is;
-        try {
-            is = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
-            solrDom = builder.parse(is);
-        } catch (Exception ex) {
-            logger.log(Level.WARNING, "", ex);
-            is = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
-            solrDom = builder.parse(is);
-        }
-        String xPathStr = "/response/result/@numFound";
-        expr = xpath.compile(xPathStr);
-        int numDocs = Integer.parseInt((String) expr.evaluate(solrDom, XPathConstants.STRING));
-        logger.log(Level.INFO, "numDocs: {0}", numDocs);
-        if (numDocs > 0) {
-
-            xPathStr = "/response/result/doc/str[@name='PID']";
-            expr = xpath.compile(xPathStr);
-            NodeList nodes = (NodeList) expr.evaluate(solrDom, XPathConstants.NODESET);
-            for (int i = 0; i < nodes.getLength(); i++) {
-                Node node = nodes.item(i);
-                String pid = node.getFirstChild().getNodeValue();
-                String to = node.getNextSibling().getFirstChild().getNodeValue();
-                replicate(pid);
-                writeUpdateTime(to);
+    private void getDocs(String date) throws Exception {
+        PidsRetriever dr = new PidsRetriever(date, k4Url, userName, pswd);
+        while (dr.hasNext()) {
+            Map.Entry<String, String> entry = dr.next();
+            replicate(entry.getKey());
+            if (entry.getValue() != null) {
+                writeUpdateTime(entry.getValue());
                 processed++;
             }
-            logger.log(Level.INFO, "{0} processed", processed);
-            start = start + ROWS;
-            while (start < numDocs) {
-                getDocs(start);
-                commit();
-                start = start + ROWS;
-            }
-            commit();
-            total += numDocs;
-            logger.log(Level.INFO, "total: {0}", total);
         }
+        commit();
+        logger.log(Level.INFO, "{0} processed", processed);
     }
-
-    private void getDocs(int start) throws Exception {
-        String urlStr = harvestUrl + "&offset=" + start;
-        logger.log(Level.INFO, "urlStr: {0}", urlStr);
-//        java.net.URL url = new java.net.URL(urlStr);
-        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        org.w3c.dom.Document solrDom;
-
-
-        Client c = Client.create();
-        WebResource r = c.resource(urlStr);
-        r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
-        c.setConnectTimeout(2000);
-        c.setReadTimeout(20000);
-        InputStream is;
-
-        try {
-            is = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
-            solrDom = builder.parse(is);
-        } catch (Exception ex) {
-            logger.log(Level.WARNING, "", ex);
-            is = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
-            solrDom = builder.parse(is);
-        }
-        String xPathStr = "/response/result/@numFound";
-        factory = XPathFactory.newInstance();
-        xpath = factory.newXPath();
-        expr = xpath.compile(xPathStr);
-        int numDocs = Integer.parseInt((String) expr.evaluate(solrDom, XPathConstants.STRING));
-        if (numDocs > 0) {
-
-            xPathStr = "/response/result/doc/str[@name='PID']";
-            expr = xpath.compile(xPathStr);
-            NodeList nodes = (NodeList) expr.evaluate(solrDom, XPathConstants.NODESET);
-            for (int i = 0; i < nodes.getLength(); i++) {
-                Node node = nodes.item(i);
-                String pid = node.getFirstChild().getNodeValue();
-                String to = node.getNextSibling().getFirstChild().getNodeValue();
-                replicate(pid);
-                if (to != null) {
-                    writeUpdateTime(to);
-                }
-
-                processed++;
-            }
-            logger.log(Level.INFO, "{0} processed", processed);
-
-        }
-    }
-
+    
     private void replicate(String pid) throws Exception {
         //get foxml from origin
         // https://xxx.xxx.xxx.xxx/search/api/v4.6/cdk/uuid:1a43499e-c953-11df-84b1-001b63bd97ba/foxml?collection=vc:111-222-xxx
         String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/foxml?collection=" + collectionPid;
-        logger.log(Level.INFO, "get foxml from origin {0}...", url);
+        logger.log(Level.FINE, "get foxml from origin {0}...", url);
         Client c = Client.create();
         c.setConnectTimeout(2000);
-        c.setReadTimeout(20000);
+        c.setReadTimeout(60000);
         WebResource r = c.resource(url);
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
         InputStream t;
@@ -383,7 +283,7 @@ public class CDKImportProcess {
         String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/solrxml";
         Client c = Client.create();
         c.setConnectTimeout(2000);
-        c.setReadTimeout(20000);
+        c.setReadTimeout(60000);
         WebResource r = c.resource(url);
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
         InputStream t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
@@ -469,9 +369,7 @@ public class CDKImportProcess {
                 } catch (IOException e) {
                     throw new Exception("IOException while reading response", e);
                 } finally {
-                    if (es != null) {
-                        es.close();
-                    }
+                    es.close();
                 }
             }
             if (errorStream.length() > 0) {
