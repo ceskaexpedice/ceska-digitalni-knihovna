@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.util.URIUtil;
 
 /**
  *
@@ -37,7 +39,8 @@ public class XSLFunctions {
         Random r = new Random();
         
             return r.nextInt(700) + 1512;
-        
-        
+    }
+    public String encode(String url) throws URIException {
+        return URIUtil.encodeQuery(url);
     }
 }

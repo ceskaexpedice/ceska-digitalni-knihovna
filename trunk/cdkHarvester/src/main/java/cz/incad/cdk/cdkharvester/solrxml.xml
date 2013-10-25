@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><add xmlns:java="http://xml.apache.org/xslt/java" xmlns:exts="java://cz.incad.xsl.XSLFunctions">
+<doc>
+<field name="PID">uuid:0eaa6730-9068-11dd-97de-000d606f5dc6</field>
+<field name="datum_str">1862</field>
+<field name="dc.title">Drobnůstky</field>
+<field name="ddt">neuvedeno</field>
+<field name="dostupnost">public</field>
+<field name="fedora.model">monograph</field>
+<field name="handle"/>
+<field name="issn"/>
+<field name="mdt">821-93</field>
+<field name="root_pid">uuid:0eaa6730-9068-11dd-97de-000d606f5dc6</field>
+<field name="root_title">Drobnůstky</field>
+<field name="status">Active</field>
+<field name="title_sort">DROBNUSTKY</field>
+<field name="datum_begin">1862</field>
+<field name="datum_end">1862</field>
+<field name="level">0</field>
+<field name="pages_count">0</field>
+<field name="rok">1862</field>
+<field name="created_date">2010-08-11T06:50:55.572Z</field>
+<field name="datum">1970-01-01T01:00:00Z</field>
+<field name="modified_date">2013-03-14T15:40:16.072Z</field>
+<field name="virtual">false</field>
+<field name="dc.creator">Doucha František</field>
+<field name="document_type">monograph</field>
+<field name="facet_autor">Doucha František</field>
+<field name="language">cze</field>
+<field name="model_path">monograph</field>
+<field name="parent_pid">uuid:0eaa6730-9068-11dd-97de-000d606f5dc6</field>
+<field name="pid_path">uuid:0eaa6730-9068-11dd-97de-000d606f5dc6</field>
+<field name="text">Drobnůstky</field>
+<field name="text">Doucha František</field>
+<field name="text"/>
+<field name="rels_ext_index">0</field>
+<field name="collection"/>
+</doc>
+</add>
