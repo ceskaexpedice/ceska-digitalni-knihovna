@@ -19,8 +19,6 @@ package cz.incad.cdk.cdkharvester;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import cz.incad.kramerius.Constants;
-import cz.incad.kramerius.FedoraAccess;
-import cz.incad.kramerius.impl.FedoraAccessImpl;
 import cz.incad.kramerius.processes.States;
 import java.io.File;
 import java.io.IOException;
@@ -50,23 +48,14 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.util.Map;
 import javax.ws.rs.core.MediaType;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathFactory;
 import net.sf.json.JSONObject;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.httpclient.util.URIUtil;
 import org.kramerius.Import;
 import org.kramerius.replications.*;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 /**
  * CDK import process
@@ -75,16 +64,13 @@ import org.w3c.dom.NodeList;
  */
 public class CDKImportProcess {
 
+    static java.util.logging.Logger logger = java.util.logging.Logger.getLogger(CDKImportProcess.class.getName());
     String API_VERSION = "v4.6";
     int ROWS = 500;
     int total;
     int processed;
     String updateTimeFile = "cdkimport.time";
     String uuidFile = "cdkimport.uuid";
-    static java.util.logging.Logger logger = java.util.logging.Logger.getLogger(CDKImportProcess.class.getName());
-    XPathFactory factory = XPathFactory.newInstance();
-    XPath xpath;
-    XPathExpression expr;
     String harvestUrl;
     String k4Url;
     String sourceName;
@@ -92,7 +78,6 @@ public class CDKImportProcess {
     String userName;
     String pswd;
     Transformer transformer;
-    FedoraAccess fa;
     protected Configuration config;
 
     @Process
@@ -209,7 +194,6 @@ public class CDKImportProcess {
         }
         String actualUUID = System.getProperty(ProcessStarter.UUID_KEY);
         writeUuid(actualUUID);
-        fa = new FedoraAccessImpl(KConfiguration.getInstance(), null);
         this.updateTimeFile = updateFile(name);
         String from = getLastUpdateTime();
         logger.log(Level.INFO, "Last index time: {0}", from);
@@ -224,8 +208,8 @@ public class CDKImportProcess {
         InputStream stylesheet = this.getClass().getResourceAsStream("/cz/incad/cdk/cdkharvester/tr.xsl");
         StreamSource xslt = new StreamSource(stylesheet);
         transformer = tfactory.newTransformer(xslt);
-        factory = XPathFactory.newInstance();
-        xpath = factory.newXPath();
+//        factory = XPathFactory.newInstance();
+//        xpath = factory.newXPath();
 
         total = 0;
         Import.initialize(KConfiguration.getInstance().getProperty("ingest.user"), KConfiguration.getInstance().getProperty("ingest.password"));
