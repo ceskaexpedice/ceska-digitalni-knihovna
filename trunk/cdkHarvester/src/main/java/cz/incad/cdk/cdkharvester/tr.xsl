@@ -12,7 +12,7 @@
     -->
     <xsl:variable name="xslfunctions" select="exts:new()" />
     <xsl:param name="collectionPid" select="collectionPid" />
-    <xsl:variable name="solr_url" select="'http://localhost:8080/solr/select'" />
+    <xsl:param name="solr_url" select="'http://localhost:8080/solr/select'" />
     <xsl:template match="/">
         <add>
             <xsl:for-each select="/response/result/doc">

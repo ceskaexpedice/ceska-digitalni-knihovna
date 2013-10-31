@@ -91,14 +91,14 @@ public class CDKImportProcess {
     }
 
     private String getStatus(String uuid) throws Exception {
-        System.out.println(config.getString("_fedoraTomcatHost") + "/search/api/v4.6/processes/" + uuid);
+        //System.out.println(config.getString("_fedoraTomcatHost") + "/search/api/v4.6/processes/" + uuid);
         Client c = Client.create();
         WebResource r = c.resource(config.getString("_fedoraTomcatHost") + "/search/api/v4.6/processes/" + uuid);
         r.addFilter(new BasicAuthenticationClientFilter(
                 config.getString("cdk.krameriusUser"),
                 config.getString("cdk.krameriusPwd")));
         String t = r.accept(MediaType.APPLICATION_JSON).get(String.class);
-        System.out.println(t);
+        //System.out.println(t);
         JSONObject j = JSONObject.fromObject(t);
         return j.getString("state");
     }
@@ -156,30 +156,7 @@ public class CDKImportProcess {
         }
         return dir;
     }
-
-//    private void setVirtualCollection() throws IOException {
-//        VirtualCollection vc = VirtualCollectionsManager.getVirtualCollectionByName(fa, sourceName, languageCodes());
-//        if (vc != null) {
-//            this.collectionPid = vc.getPid();
-//            logger.log(Level.INFO, this.collectionPid);
-//        } else {
-//            this.collectionPid = VirtualCollectionsManager.create(fa);
-//            String[] langs = config.getStringArray("interface.languages");
-//            logger.log(Level.INFO, langs.toString());
-//            for (int i = 0; i < langs.length; i++) {
-//                String lang = langs[++i];
-//                VirtualCollectionsManager.modifyDatastream(collectionPid, lang, sourceName, fa, config.getString("_fedoraTomcatHost") + "/search/vc");
-//            }
-//        }
-//    }
-//    private ArrayList languageCodes() {
-//        ArrayList l = new ArrayList<String>();
-//        String[] langs = config.getStringArray("interface.languages");
-//        for (int i = 0; i < langs.length; i++) {
-//            l.add(langs[++i]);
-//        }
-//        return l;
-//    }
+    
     public void start(String url, String name, String collectionPid, String userName, String pswd) throws Exception {
 
 
@@ -187,12 +164,14 @@ public class CDKImportProcess {
 
         this.uuidFile = uuidFile(name);
         String uuid = getLastUuid();
+        String actualUUID = System.getProperty(ProcessStarter.UUID_KEY);
 
         if (uuid != null && !uuid.equals("") && !States.notRunningState(States.valueOf(getStatus(uuid)))) {
             logger.log(Level.INFO, "Process yet active. Finish.");
+            File f = new File(xslsFolder().getAbsolutePath() + File.separator + "uuids" + File.separator + actualUUID);
+            f.createNewFile();
             return;
         }
-        String actualUUID = System.getProperty(ProcessStarter.UUID_KEY);
         writeUuid(actualUUID);
         this.updateTimeFile = updateFile(name);
         String from = getLastUpdateTime();
@@ -274,6 +253,7 @@ public class CDKImportProcess {
 
         StreamResult destStream = new StreamResult(new StringWriter());
         transformer.setParameter("collectionPid", collectionPid);
+        transformer.setParameter("solr_url", config.getString("solrHost")+"/select");
         transformer.transform(new StreamSource(t), destStream);
 
         StringWriter sw = (StringWriter) destStream.getWriter();
@@ -370,7 +350,7 @@ public class CDKImportProcess {
     }
 
     private void commit() throws java.rmi.RemoteException, Exception {
-        String s = "<commit softCommit=\"false\" />";
+        String s = "<commit />";
         logger.log(Level.FINE, "commit");
 
         postData(new StringReader(s), new StringBuilder());
