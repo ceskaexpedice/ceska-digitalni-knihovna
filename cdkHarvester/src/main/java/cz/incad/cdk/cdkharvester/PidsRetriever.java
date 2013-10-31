@@ -53,15 +53,16 @@ public class PidsRetriever {
     XPathFactory factory = XPathFactory.newInstance();
     XPath xpath;
     XPathExpression expr;
-    final String APIURL_PREFIX = "/api/v4.6/cdk/prepare?rows=50&date=";
+    final String APIURL_PREFIX = "/api/v4.6/cdk/prepare?rows=500&date=";
     Queue<Map.Entry<String, String>> qe;
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
     public PidsRetriever(String date, String k4Url, String userName, String pswd) throws ParseException {
         this.initial_date = date;
-        long d = sdf.parse(date).getTime() + 1;
-        Date a =  new Date(d);
-        this.actual_date = sdf.format(a);
+//        long d = sdf.parse(date).getTime() + 1;
+//        Date a =  new Date(d);
+//        this.actual_date = sdf.format(a);
+        this.actual_date = date;
         this.harvestUrl = k4Url + APIURL_PREFIX;
         this.userName = userName;
         this.pswd = pswd;
@@ -80,10 +81,10 @@ public class PidsRetriever {
     public Map.Entry<String, String> next() throws ParseException {
         Map.Entry<String, String> entry = qe.poll();
         
-        long d = sdf.parse(entry.getValue()).getTime() + 1;
-        Date a =  new Date(d);
-        this.actual_date = sdf.format(a);
-        //actual_date = entry.getValue();
+//        long d = sdf.parse(entry.getValue()).getTime() + 1;
+//        Date a =  new Date(d);
+//        this.actual_date = sdf.format(a);
+        actual_date = entry.getValue();
         return entry;
     }
 
