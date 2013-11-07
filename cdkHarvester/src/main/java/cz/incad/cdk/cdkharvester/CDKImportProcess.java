@@ -17,6 +17,7 @@
 package cz.incad.cdk.cdkharvester;
 
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import cz.incad.kramerius.Constants;
 import cz.incad.kramerius.processes.States;
@@ -225,7 +226,16 @@ public class CDKImportProcess {
         InputStream t;
         try {
             t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
-        } catch (Exception ex) {
+        } catch (UniformInterfaceException ex2){
+                if(ex2.getResponse().getStatus()==404){
+                    logger.log(Level.WARNING, "Call to {0} failed with message {1}. Skyping document.", 
+                            new Object[]{url, ex2.getResponse().toString()});
+                    return;
+                }else{
+                    logger.log(Level.WARNING, "Call to {0} failed. Retrying...", url);
+                    t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
+                }
+        }catch (Exception ex) {
             logger.log(Level.WARNING, "Call to {0} failed. Retrying...", url);
             t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
         }
