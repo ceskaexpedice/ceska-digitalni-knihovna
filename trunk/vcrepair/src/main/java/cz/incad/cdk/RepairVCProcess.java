@@ -187,10 +187,11 @@ public class RepairVCProcess {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		XMLUtils.print(relsExt, bos);
 		byte[] message = bos.toByteArray();
-		MessageDigest md5inst = MessageDigest.getInstance(HASH);
-		byte[] digest = md5inst.digest(message);
-		String encodeHexString = new String(Hex.encodeHex(digest));
-		System.out.println("encoding to hex string '" + encodeHexString + "'");
+//		doesnt work for XML -> custom serializer on fedora side
+//		MessageDigest md5inst = MessageDigest.getInstance(HASH);
+//		byte[] digest = md5inst.digest(message);
+//		String encodeHexString = new String(Hex.encodeHex(digest));
+		
 		fa.getAPIM().modifyDatastreamByValue(pid, "RELS-EXT", null, "RELS-EXT",
 				"application/rdf+xml", null, message, "DISABLED", null,
 				"RepairVCProcess "+SDATE_FORMAT.format(new Date()), false);
