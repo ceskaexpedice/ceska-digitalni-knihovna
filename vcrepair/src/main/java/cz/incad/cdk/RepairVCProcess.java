@@ -52,6 +52,10 @@ import cz.incad.kramerius.utils.conf.KConfiguration;
 import cz.incad.kramerius.utils.pid.LexerException;
 import cz.incad.kramerius.utils.pid.PIDParser;
 
+/**
+ * Process opravuje identifikator virtualni sbirky 
+ * @author pavels
+ */
 public class RepairVCProcess {
 
 	public static final SimpleDateFormat SDATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss");
