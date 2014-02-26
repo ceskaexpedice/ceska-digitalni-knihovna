@@ -249,7 +249,7 @@ public class CDKImportProcess {
     }
 
     private void ingest(InputStream foxml, String pid) throws Exception {
-        Import.ingest(foxml, pid, null);
+        Import.ingest(foxml, pid, null, null);
     }
 
     private void index(String pid) throws Exception {
