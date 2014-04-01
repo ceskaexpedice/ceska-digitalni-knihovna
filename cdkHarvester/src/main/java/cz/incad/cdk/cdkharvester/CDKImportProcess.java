@@ -208,6 +208,7 @@ public class CDKImportProcess {
                 writeUpdateTime(entry.getValue());
                 processed++;
             }
+            commit();
         }
         commit();
         logger.log(Level.INFO, "{0} processed", processed);
