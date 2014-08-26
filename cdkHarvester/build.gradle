@@ -1,0 +1,23 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+
+repositories{
+	mavenLocal()
+	mavenCentral()
+}
+
+dependencies {
+	compile "cz.incad.kramerius:import:5.0.0-SNAPSHOT"
+	testCompile "junit:junit:3.8.1"
+}
+
+sourceSets {
+	main {
+		resources {
+			srcDir  'src/main/java'
+			exclude 'src/main/java/**/*.java'
+		}	
+	}
+}
+
