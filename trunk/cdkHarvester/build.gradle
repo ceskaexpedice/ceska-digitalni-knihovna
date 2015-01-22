@@ -1,14 +1,17 @@
 apply plugin: 'java'
 apply plugin: 'maven'
-
+apply plugin: 'eclipse'
 
 repositories{
 	mavenLocal()
 	mavenCentral()
 }
 
+sourceCompatibility = '1.6'
+targetCompatibility= '1.6'
+
 dependencies {
-	compile "cz.incad.kramerius:import:5.0.0-SNAPSHOT"
+	compile "cz.incad.kramerius:import:5.0.1"
 	testCompile "junit:junit:3.8.1"
 }
 
