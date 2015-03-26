@@ -45,17 +45,7 @@
                     <field><xsl:attribute name="name"><xsl:value-of  select="@name"/></xsl:attribute><xsl:value-of select="." /></field>
                 </xsl:for-each>
                 <xsl:for-each select="arr/str">
-                    <xsl:choose>
-                        <xsl:when test="../@name = 'collection'">
-                        <!--
-                            <field><xsl:attribute name="name"><xsl:value-of  select="../@name"/></xsl:attribute><xsl:value-of select="." /></field>
-                        -->    
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <field><xsl:attribute name="name"><xsl:value-of  select="../@name"/></xsl:attribute><xsl:value-of select="." /></field>
-                        </xsl:otherwise>
-                    </xsl:choose>
-                    
+                    <field><xsl:attribute name="name"><xsl:value-of  select="../@name"/></xsl:attribute><xsl:value-of select="." /></field>
                 </xsl:for-each>
                 <xsl:for-each select="arr/int">
                     <field><xsl:attribute name="name"><xsl:value-of  select="../@name"/></xsl:attribute><xsl:value-of select="." /></field>
