@@ -18,6 +18,8 @@ package cz.incad.cdk.cdkharvester;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.config.ClientConfig;
+
 import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -26,6 +28,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.logging.Level;
+
 import javax.ws.rs.core.MediaType;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -33,6 +36,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
+
 import org.apache.commons.httpclient.util.URIUtil;
 import org.kramerius.replications.BasicAuthenticationClientFilter;
 import org.w3c.dom.Node;
@@ -94,6 +98,9 @@ public class PidsRetriever {
         DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         org.w3c.dom.Document solrDom;
         Client c = Client.create();
+        // follow redirect
+        c.getProperties().put(
+                ClientConfig.PROPERTY_FOLLOW_REDIRECTS, true);
         c.setConnectTimeout(2000);
         c.setReadTimeout(20000);
         WebResource r = c.resource(urlStr);
