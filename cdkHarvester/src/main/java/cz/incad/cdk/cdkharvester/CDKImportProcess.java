@@ -50,6 +50,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -89,8 +90,16 @@ public class CDKImportProcess {
     protected Configuration config;
     
     // Modified by PS - foxml manip
-    private List<ProcessFOXML> processingChain = Arrays.asList(new ImageReplaceProcess()); 
+    private List<ProcessFOXML> processingChain = new ArrayList<ProcessFOXML>();
     
+    /**
+     * 
+     */
+    public CDKImportProcess() {
+        super();
+        this.processingChain.add(new ImageReplaceProcess());
+    }
+
     @Process
     public static void cdkImport(@ParameterName("url") String url, @ParameterName("name") String name,
             @ParameterName("collectionPid") String collectionPid, @ParameterName("username") String userName,

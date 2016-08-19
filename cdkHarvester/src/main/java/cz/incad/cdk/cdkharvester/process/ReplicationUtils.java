@@ -73,7 +73,7 @@ public class ReplicationUtils {
             location.setAttribute("TYPE", "URL");
     
             
-            List<Node> list = new ArrayList<>();
+            List<Node> list = new ArrayList<Node>();
             NodeList childNodes = version.getChildNodes();
             for (int i = 0,ll = childNodes.getLength(); i < ll; i++) {
                 list.add(childNodes.item(i));
