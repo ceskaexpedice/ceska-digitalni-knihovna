@@ -63,9 +63,6 @@ public class PidsRetriever {
 
     public PidsRetriever(String date, String k4Url, String userName, String pswd) throws ParseException {
         this.initial_date = date;
-//        long d = sdf.parse(date).getTime() + 1;
-//        Date a =  new Date(d);
-//        this.actual_date = sdf.format(a);
         this.actual_date = date;
         this.harvestUrl = k4Url + APIURL_PREFIX;
         this.userName = userName;
@@ -76,7 +73,6 @@ public class PidsRetriever {
 
     public boolean hasNext() throws Exception {
         if (!qe.iterator().hasNext()) {
-            //try get more docs
             getDocs();
         }
         return qe.iterator().hasNext();
@@ -85,9 +81,6 @@ public class PidsRetriever {
     public Map.Entry<String, String> next() throws ParseException {
         Map.Entry<String, String> entry = qe.poll();
         
-//        long d = sdf.parse(entry.getValue()).getTime() + 1;
-//        Date a =  new Date(d);
-//        this.actual_date = sdf.format(a);
         actual_date = entry.getValue();
         return entry;
     }

@@ -19,12 +19,14 @@ package cz.incad.cdk.cdkharvester;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
+
+import cz.incad.cdk.cdkharvester.process.ImageReplaceProcess;
+import cz.incad.cdk.cdkharvester.process.ProcessFOXML;
 import cz.incad.kramerius.Constants;
 import cz.incad.kramerius.processes.States;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
-
 
 import cz.incad.kramerius.processes.annotations.ParameterName;
 import cz.incad.kramerius.processes.annotations.Process;
@@ -32,6 +34,7 @@ import cz.incad.kramerius.processes.impl.ProcessStarter;
 import cz.incad.kramerius.utils.conf.KConfiguration;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -47,6 +50,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.MediaType;
 import javax.xml.transform.Transformer;
@@ -55,6 +60,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import net.sf.json.JSONObject;
 import org.apache.commons.configuration.Configuration;
+import org.codehaus.jackson.map.ser.ArraySerializers;
 import org.kramerius.Import;
 import org.kramerius.replications.*;
 
@@ -66,23 +72,29 @@ import org.kramerius.replications.*;
 public class CDKImportProcess {
 
     static java.util.logging.Logger logger = java.util.logging.Logger.getLogger(CDKImportProcess.class.getName());
-    String API_VERSION = "v4.6";
-    int ROWS = 500;
-    int total;
-    int processed;
-    String updateTimeFile = "cdkimport.time";
-    String uuidFile = "cdkimport.uuid";
-    String harvestUrl;
-    String k4Url;
-    String sourceName;
-    String collectionPid;
-    String userName;
-    String pswd;
-    Transformer transformer;
-    protected Configuration config;
+    public static String API_VERSION = "v4.6";
+    public static int ROWS = 500;
 
+    private int total;
+    private int processed;
+    private String updateTimeFile = "cdkimport.time";
+    private String uuidFile = "cdkimport.uuid";
+    private String harvestUrl;
+    private String k4Url;
+    private String sourceName;
+    private String collectionPid;
+    private String userName;
+    private String pswd;
+    private Transformer transformer;
+    protected Configuration config;
+    
+    // Modified by PS - foxml manip
+    private List<ProcessFOXML> processingChain = Arrays.asList(new ImageReplaceProcess()); 
+    
     @Process
-    public static void cdkImport(@ParameterName("url") String url, @ParameterName("name") String name, @ParameterName("collectionPid") String collectionPid, @ParameterName("username") String userName, @ParameterName("pswd") String pswd) throws Exception {
+    public static void cdkImport(@ParameterName("url") String url, @ParameterName("name") String name,
+            @ParameterName("collectionPid") String collectionPid, @ParameterName("username") String userName,
+            @ParameterName("pswd") String pswd) throws Exception {
 
         ProcessStarter.updateName("Import CDK from " + name);
 
@@ -92,14 +104,11 @@ public class CDKImportProcess {
     }
 
     private String getStatus(String uuid) throws Exception {
-        //System.out.println(config.getString("_fedoraTomcatHost") + "/search/api/v4.6/processes/" + uuid);
         Client c = Client.create();
         WebResource r = c.resource(config.getString("_fedoraTomcatHost") + "/search/api/v4.6/processes/" + uuid);
-        r.addFilter(new BasicAuthenticationClientFilter(
-                config.getString("cdk.krameriusUser"),
+        r.addFilter(new BasicAuthenticationClientFilter(config.getString("cdk.krameriusUser"),
                 config.getString("cdk.krameriusPwd")));
         String t = r.accept(MediaType.APPLICATION_JSON).get(String.class);
-        //System.out.println(t);
         JSONObject j = JSONObject.fromObject(t);
         return j.getString("state");
     }
@@ -157,9 +166,8 @@ public class CDKImportProcess {
         }
         return dir;
     }
-    
-    public void start(String url, String name, String collectionPid, String userName, String pswd) throws Exception {
 
+    public void start(String url, String name, String collectionPid, String userName, String pswd) throws Exception {
 
         config = KConfiguration.getInstance().getConfiguration();
 
@@ -180,7 +188,7 @@ public class CDKImportProcess {
         this.k4Url = url;
         this.sourceName = name;
         this.collectionPid = collectionPid;
-//        setVirtualCollection();
+        // setVirtualCollection();
         this.userName = userName;
         this.pswd = pswd;
 
@@ -188,12 +196,10 @@ public class CDKImportProcess {
         InputStream stylesheet = this.getClass().getResourceAsStream("/cz/incad/cdk/cdkharvester/tr.xsl");
         StreamSource xslt = new StreamSource(stylesheet);
         transformer = tfactory.newTransformer(xslt);
-//        factory = XPathFactory.newInstance();
-//        xpath = factory.newXPath();
 
         total = 0;
-        Import.initialize(KConfiguration.getInstance().getProperty("ingest.user"), KConfiguration.getInstance().getProperty("ingest.password"));
-        //getDocs(url, from);
+        Import.initialize(KConfiguration.getInstance().getProperty("ingest.user"),
+                KConfiguration.getInstance().getProperty("ingest.password"));
         getDocs(from);
 
         logger.log(Level.INFO, "Finished. Total documents processed: {0}", total);
@@ -213,10 +219,8 @@ public class CDKImportProcess {
         commit();
         logger.log(Level.INFO, "{0} processed", processed);
     }
-    
+
     private void replicate(String pid) throws Exception {
-        //get foxml from origin
-        // https://xxx.xxx.xxx.xxx/search/api/v4.6/cdk/uuid:1a43499e-c953-11df-84b1-001b63bd97ba/foxml?collection=vc:111-222-xxx
         String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/foxml?collection=" + collectionPid;
         logger.log(Level.FINE, "get foxml from origin {0}...", url);
         Client c = Client.create();
@@ -227,30 +231,33 @@ public class CDKImportProcess {
         InputStream t;
         try {
             t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
-        } catch (UniformInterfaceException ex2){
-                if(ex2.getResponse().getStatus()==404){
-                    logger.log(Level.WARNING, "Call to {0} failed with message {1}. Skyping document.", 
-                            new Object[]{url, ex2.getResponse().toString()});
-                    return;
-                }else{
-                    logger.log(Level.WARNING, "Call to {0} failed. Retrying...", url);
-                    t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
-                }
-        }catch (Exception ex) {
+        } catch (UniformInterfaceException ex2) {
+            if (ex2.getResponse().getStatus() == 404) {
+                logger.log(Level.WARNING, "Call to {0} failed with message {1}. Skyping document.",
+                        new Object[] { url, ex2.getResponse().toString() });
+                return;
+            } else {
+                logger.log(Level.WARNING, "Call to {0} failed. Retrying...", url);
+                t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
+            }
+        } catch (Exception ex) {
             logger.log(Level.WARNING, "Call to {0} failed. Retrying...", url);
             t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
         }
-        //import foxml to dest
         logger.log(Level.FINE, "ingesting {0}...", pid);
         ingest(t, pid);
-
 
         logger.log(Level.INFO, "indexing {0}...", pid);
         index(pid);
     }
 
     private void ingest(InputStream foxml, String pid) throws Exception {
-        Import.ingest(foxml, pid, null, null,true);
+        InputStream processingStream = foxml;
+        for (int i = 0,ll= this.processingChain.size(); i < ll; i++) {
+            ProcessFOXML unit = processingChain.get(i);
+            processingStream = new ByteArrayInputStream(unit.process(this.k4Url, pid, processingStream));
+        }
+        Import.ingest(processingStream, pid, null, null, true);
     }
 
     private void index(String pid) throws Exception {
@@ -264,11 +271,11 @@ public class CDKImportProcess {
 
         StreamResult destStream = new StreamResult(new StringWriter());
         transformer.setParameter("collectionPid", collectionPid);
-        transformer.setParameter("solr_url", config.getString("solrHost")+"/select");
+        transformer.setParameter("solr_url", config.getString("solrHost") + "/select");
         transformer.transform(new StreamSource(t), destStream);
 
         StringWriter sw = (StringWriter) destStream.getWriter();
-        //logger.info(sw.toString());
+        // logger.info(sw.toString());
         postData(new StringReader(sw.toString()), new StringBuilder());
 
     }
@@ -277,8 +284,7 @@ public class CDKImportProcess {
      * Reads data from the data reader and posts it to solr, writes the response
      * to output
      */
-    private void postData(Reader data, StringBuilder output)
-            throws Exception {
+    private void postData(Reader data, StringBuilder output) throws Exception {
         URL solrUrl = null;
         String solrUrlString = config.getString("solrHost") + "/update";
         try {
@@ -321,7 +327,8 @@ public class CDKImportProcess {
             StringBuilder errorStream = new StringBuilder();
             try {
                 if (status != HttpURLConnection.HTTP_OK) {
-                    errorStream.append("postData URL=").append(solrUrlString).append(" HTTP response code=").append(status).append(" ");
+                    errorStream.append("postData URL=").append(solrUrlString).append(" HTTP response code=")
+                            .append(status).append(" ");
                     throw new Exception("URL=" + solrUrlString + " HTTP response code=" + status);
                 }
                 Reader reader = new InputStreamReader(in);
