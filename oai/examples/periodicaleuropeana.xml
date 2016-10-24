@@ -1,0 +1,48 @@
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/
+         http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+	<responseDate>2016-10-24T18:09:57Z</responseDate>
+	<request verb="GetRecord" metadataPrefix="ese"
+		identifier="uuid:bdc405b0-e5f9-11dc-bfb2-000d606f5dc6" />
+	<GetRecord>
+		<record>
+			<header xmlns:dc="http://purl.org/dc/elements/1.1/"
+				xmlns:dcterms="http://purl.org/dc/terms/" xmlns:europeana="http://www.europeana.eu/schemas/ese/"
+				xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/">
+				<identifier>oai:localhost:uuid:bdc405b0-e5f9-11dc-bfb2-000d606f5dc6
+				</identifier>
+				<datestamp>2011-07-12T18:05:49Z</datestamp>
+				<setSpec>periodical</setSpec>
+			</header>
+			<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"
+				xmlns:dcterms="http://purl.org/dc/terms/" xmlns:europeana="http://www.europeana.eu/schemas/ese/"
+				xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/">
+				<europeana:record
+					xsi:schemaLocation="http://www.europeana.eu/schemas/ese/ http://www.europeana.eu/schemas/ese/ESE-V3.2.xsd http://purl.org/dc/elements/1.1/ http://www.dublincore.org/schemas/xmls/qdc/dc.xsd http://purl.org/dc/terms/ http://www.dublincore.org/schemas/xmls/qdc/dcterms.xsd http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd">
+					<dc:title>Lidové noviny</dc:title>
+					<dc:publisher>Vydavatelské družstvo Lidové strany v Brne
+					</dc:publisher>
+					<dc:publisher>Pavel Váša a František Šelepa</dc:publisher>
+					<dc:publisher>Jaroslav Rejzek</dc:publisher>
+					<dc:date>1893 - 1945</dc:date>
+					<dc:type>model:periodical</dc:type>
+					<dc:identifier>uuid:bdc405b0-e5f9-11dc-bfb2-000d606f5dc6
+					</dc:identifier>
+					<dc:identifier>handle:BOA001/9425</dc:identifier>
+					<dc:identifier>issn:1802-6265</dc:identifier>
+					<dc:language>cze</dc:language>
+					<dc:rights>policy:public</dc:rights>
+					<europeana:object>http://cdk.lib.cas.cz/search/img?uuid=uuid:bdc405b0-e5f9-11dc-bfb2-000d606f5dc6&amp;stream=IMG_THUMB&amp;action=GETRAW
+					</europeana:object>
+					<europeana:provider>Czech digital library/Ceská digitální knihovna
+					</europeana:provider>
+					<europeana:dataProvider>The Moravian Library in Brno/Moravská
+						zemská knihovna</europeana:dataProvider>
+					<europeana:type>TEXT</europeana:type>
+					<europeana:isShownAt>http://cdk.lib.cas.cz/search/handle/uuid:bdc405b0-e5f9-11dc-bfb2-000d606f5dc6
+					</europeana:isShownAt>
+				</europeana:record>
+			</metadata>
+		</record>
+	</GetRecord>
+</OAI-PMH>
