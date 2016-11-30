@@ -2,3 +2,4 @@
 include 'commontools'
 include 'oaicheck'
 include 'oaisetprivate'
+include 'metadataapp'
