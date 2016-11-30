@@ -99,25 +99,4 @@ public class PeriodicalProvideServlet extends HttpServlet {
 		
 	
 
-
-	public static void main(String[] args) throws MalformedURLException, ParserConfigurationException, SAXException, IOException, TransformerException {
-		//dc("uuid:6a17aac3-b9e9-11e1-1746-001143e3f55c");
-//		List<JSONObject> items = Utils.items("uuid:6a17aac3-b9e9-11e1-1746-001143e3f55c");
-//		Document dc = Utils.dc("uuid:6a17aac3-b9e9-11e1-1746-001143e3f55c");
-//		List<String> titles = new ArrayList<>();
-//		for (JSONObject jsonObject : items) {
-//			String model = jsonObject.getString("model");
-//			TitleParts part = TitleParts.valueOf(model);
-//			titles.add(part.part(jsonObject));
-//		}
-//		
-//		Element findElement = XMLUtils.findElement(dc.getDocumentElement(), "dc:title");
-//		String title = titles.toString();
-//		System.out.println(title);
-//		
-//		findElement.appendChild(dc.createTextNode(title));
-//		
-//		XMLUtils.print(dc, System.out);
-//		System.out.println(findElement);
-	}
 }
