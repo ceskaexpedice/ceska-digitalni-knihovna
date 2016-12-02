@@ -38,17 +38,39 @@ public enum TitleParts {
 		public String part(JSONObject object) {
 			if (object.has("details")) {
 				StringBuilder builder = new StringBuilder();
+				boolean partNumberExists = false;
 				JSONObject jsonObject = object.getJSONObject("details");
 				if (hasValue("partNumber", jsonObject)) {
+					partNumberExists = true;
 					builder.append("Number:"+jsonObject.getString("partNumber"));
 				}
-				if (hasValue("date", jsonObject)) {
+				if (!partNumberExists && hasValue("date", jsonObject)) {
 					if (builder.length() > 0) builder.append(' ');
 					builder.append(jsonObject.getString("date"));
 				}
 				return builder.toString(); 
 			}
 			return null;
+		}
+	},
+	article {
+
+		@Override
+		public String part(JSONObject object) {
+			if (object.has("title"))
+				return object.getString("title");
+			else 
+				return null;
+		}
+		
+	},
+	supplement {
+		@Override
+		public String part(JSONObject object) {
+			if (object.has("title"))
+				return object.getString("title");
+			else 
+				return null;
 		}
 	};
 	
@@ -62,7 +84,7 @@ public enum TitleParts {
 	}
 	
 	public static String buildTitle(List<JSONObject> items) {
-		List<String> titles = new ArrayList<>();
+		List<String> titles = new ArrayList<String>();
 		for (JSONObject jsonObject : items) {
 			String model = jsonObject.getString("model");
 			TitleParts part = TitleParts.valueOf(model);

@@ -27,11 +27,12 @@ import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 
 import cz.incad.kramerius.utils.XMLUtils;
+import cz.incad.kramerius.utils.XMLUtils.ElementsFilter;
 
 public class Utils {
 
 	static Map<String, List<String>> collectValues(List<Document> dcs) throws ParserConfigurationException {
-		Map<String, List<String>> map = new HashMap<>();
+		Map<String, List<String>> map = new HashMap<String, List<String>>();
 		for (Document pathsDoc : dcs) {
 			NodeList childNodes = pathsDoc.getDocumentElement().getChildNodes();
 			for (int i = 0,ll=childNodes.getLength(); i < ll; i++) {
@@ -41,7 +42,7 @@ public class Utils {
 					if (subElm.getNamespaceURI().equals("http://purl.org/dc/elements/1.1/")) {
 						String localName = subElm.getLocalName();
 						if (!map.containsKey(localName)) {
-							map.put(localName, new ArrayList<>());
+							map.put(localName, new ArrayList<String>());
 						}
 						List<String> list = map.get(localName);
 						String textContent = subElm.getTextContent();
@@ -99,11 +100,37 @@ public class Utils {
 		return obj.getJSONArray("context");
 	}
 	public static List<String> onePath(JSONArray jsonArray) {
-		List<String> rets = new ArrayList<>();
+		List<String> rets = new ArrayList<String>();
 		for (int i = 0; i < jsonArray.length(); i++) {
 			rets.add(jsonArray.getJSONObject(i).getString("pid"));
 		}
 		return rets;
+	}
+
+
+	static String findLanguageFromDC(Document doc) {
+		Element foundElement = XMLUtils.findElement(doc.getDocumentElement(), new XMLUtils.ElementsFilter() {
+			@Override
+			public boolean acceptElement(Element element) {
+				String localName = element.getLocalName();
+				String ns = element.getNamespaceURI();
+				return localName.equals("language");
+			}
+		});
+		return foundElement != null ? foundElement.getTextContent() : null;
+	}
+
+
+	static String findPublisherFromDC(Document doc) {
+		Element foundElement = XMLUtils.findElement(doc.getDocumentElement(), new XMLUtils.ElementsFilter() {
+			@Override
+			public boolean acceptElement(Element element) {
+				String localName = element.getLocalName();
+				String ns = element.getNamespaceURI();
+				return localName.equals("publisher");
+			}
+		});
+		return foundElement != null ? foundElement.getTextContent() : null;
 	}
 
 }

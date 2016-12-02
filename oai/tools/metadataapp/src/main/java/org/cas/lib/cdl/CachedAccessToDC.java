@@ -22,13 +22,16 @@ import com.google.common.cache.LoadingCache;
 
 public class CachedAccessToDC implements CachedAccess<Document, String>{
 
+	public static final int DEFAULT_MAXIMUM_SIZE = 1000000;
+	public static final int EXPIRATION_TIME = 30;
+
 	private LoadingCache<String, Document> dcObjectsChache;
 	
 	public CachedAccessToDC() {
 		this.dcObjectsChache = 
         CacheBuilder.newBuilder()
-           .maximumSize(1000)
-           .expireAfterAccess(30, TimeUnit.MINUTES) 
+           .maximumSize(DEFAULT_MAXIMUM_SIZE)
+           .expireAfterAccess(EXPIRATION_TIME, TimeUnit.DAYS) 
            .build(new CacheLoader<String, Document>(){ 
               @Override
               public Document load(String empId) throws Exception {
@@ -44,7 +47,7 @@ public class CachedAccessToDC implements CachedAccess<Document, String>{
 	
 	@Override
 	public List<Document> getForPath(String k, ContextAware contextAware) throws ExecutionException {
-		List<Document> retvals = new ArrayList<>();
+		List<Document> retvals = new ArrayList<Document>();
 		List<String> path = contextAware.pathsSelect(k);
 		for (String pid : path) {
 			retvals.add(get(pid));

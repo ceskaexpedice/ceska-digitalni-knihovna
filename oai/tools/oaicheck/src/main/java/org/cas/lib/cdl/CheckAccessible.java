@@ -2,9 +2,16 @@ package org.cas.lib.cdl;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.logging.Logger;
 
+/**
+ * Check if title is accessible in target system
+ * @author pstastny
+ */
 public class CheckAccessible  implements IterationControl {
     
+	public static final Logger LOGGER = Logger.getLogger(ChecksEnum.accessible.name());
+	
     private int notAcessible = 0;
     
     @Override
@@ -12,7 +19,7 @@ public class CheckAccessible  implements IterationControl {
         for (String p : pids) {
             boolean accesible = PublicConnectUtils.headFullImgSourcecKramerius(p);
             if (!accesible) {
-                System.out.println("non accessible pid "+p);
+                LOGGER.info("non accessible pid "+p);
                 this.notAcessible +=1;
             }
         }
@@ -20,6 +27,6 @@ public class CheckAccessible  implements IterationControl {
 
     @Override
     public void printResult() {
-        System.out.println("Pocet nedostupnych: "+this. notAcessible);
+    	LOGGER.info("Pocet nedostupnych: "+this. notAcessible);
     }
 }

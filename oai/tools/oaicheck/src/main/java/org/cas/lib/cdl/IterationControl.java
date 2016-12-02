@@ -20,4 +20,5 @@ public interface IterationControl {
      * Print results after iteration
      */
     public void printResult();
+
 }

@@ -24,6 +24,10 @@ apply plugin: 'war'
 
 apply plugin: 'org.akhikhl.gretty'
 
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+	
 // In this section you declare where to find the dependencies of your project
 repositories {
     // Use 'jcenter' for resolving your dependencies.
@@ -51,3 +55,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
+
+war {
+	archiveName 'oaitransform.war'
+}

@@ -17,6 +17,8 @@ public class PublicConnectUtils {
     public static final String CDK_SERVER = "http://cdk.lib.cas.cz/search/";
     public static final String SOURCE_KRAMERIUS = "http://kramerius.lib.cas.cz/search/";
 
+    public static final String DC_TRANSFORMATION = "http://localhost:8080/metadataapp/dc?pid=";
+    
     /**
      * HEAD request to source kramerius
      * @param pid Requested pid
@@ -62,6 +64,14 @@ public class PublicConnectUtils {
                 .resource(CDK_SERVER+"api/v5.0/search?q="
                         + query);
         String t = r.accept(MediaType.APPLICATION_JSON).get(String.class);
+        return t;
+    }
+    
+    public static String dcTransformation(String pid) {
+        Client c = Client.create();
+        WebResource r = c
+                .resource(DC_TRANSFORMATION+pid);
+        String t = r.accept(MediaType.TEXT_XML).get(String.class);
         return t;
     }
     

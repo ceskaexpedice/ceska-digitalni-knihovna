@@ -4,15 +4,20 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.json.JSONObject;
 
 /**
+ * Requesting target solr; 
  * Check if the title exists in in target SOLR
  * @author pstastny
  */
 public class CheckExists implements IterationControl {
 
+	public static final Logger LOGGER = Logger.getLogger(ChecksEnum.exists.name());
+	
+	
     private int counter = 0;
     private int missing = 0;
     
@@ -30,7 +35,7 @@ public class CheckExists implements IterationControl {
                 pidsFromKNAV.remove(pid);
             } else {
                 this.missing += 1;
-                System.out.println("non existent pid "+pid);
+                LOGGER.info("non existent pid "+pid);
             }
         }
     }
@@ -58,7 +63,7 @@ public class CheckExists implements IterationControl {
 
     @Override
     public void printResult() {
-        System.out.println("Pocet dokumentu: "+this.getCounter());
-        System.out.println("Pocet chybejicich: "+this.getMissing());
+        LOGGER.info("Pocet dokumentu: "+this.getCounter());
+        LOGGER.info("Pocet chybejicich: "+this.getMissing());
     }
 }
