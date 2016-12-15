@@ -32,6 +32,7 @@ targetCompatibility = 1.6
 repositories {
     // Use 'jcenter' for resolving your dependencies.
     // You can declare any Maven/Ivy/file repository here.
+    mavenLocal()
     jcenter()
 }
 
@@ -44,6 +45,9 @@ dependencies {
 	compile 'org.webjars:bootstrap:3.2.0'
 
 	compile group: 'com.google.guava', name: 'guava', version: '19.0'
+	
+	compile group: 'cz.incad.kramerius', name: 'common', version: '5.3.5',  changing: true
+	compile group: 'cz.incad.kramerius', name: 'mw-process', version: '5.3.5', changing: true
 	
 	compile 'org.webjars:bootstrap:3.2.0'
   	compile 'org.webjars:jquery:2.1.1'	

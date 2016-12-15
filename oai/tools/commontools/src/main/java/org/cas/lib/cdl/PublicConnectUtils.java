@@ -18,6 +18,7 @@ public class PublicConnectUtils {
     public static final String SOURCE_KRAMERIUS = "http://kramerius.lib.cas.cz/search/";
 
     public static final String DC_TRANSFORMATION = "http://localhost:8080/metadataapp/dc?pid=";
+    public static final String OAI_RECORD = "http://cdk.lib.cas.cz/oai?verb=GetRecord&metadataPrefix=ese&identifier=";
     
     /**
      * HEAD request to source kramerius
@@ -74,5 +75,13 @@ public class PublicConnectUtils {
         String t = r.accept(MediaType.TEXT_XML).get(String.class);
         return t;
     }
-    
+
+    public static String oaiRec(String pid) {
+        Client c = Client.create();
+        WebResource r = c
+                .resource(OAI_RECORD+pid);
+        String t = r.accept(MediaType.TEXT_XML).get(String.class);
+        return t;
+    }
+
 }

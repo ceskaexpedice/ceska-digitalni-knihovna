@@ -22,7 +22,5 @@ public class CachedAccessToJsonTest extends TestCase {
 		List<JSONObject> path = cached.getForPath("uuid:6a17aac3-b9e9-11e1-1746-001143e3f55c", cached);
 		Assert.assertTrue(path.size() == 3);
 	}
-
-
 	
 }

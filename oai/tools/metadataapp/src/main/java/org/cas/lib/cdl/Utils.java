@@ -75,6 +75,12 @@ public class Utils {
 		return parseDocument;
 	}
 
+	static Document mods(String pid) throws ParserConfigurationException, SAXException, IOException {
+		String formatted = String.format(PeriodicalProvideServlet.BIBLIO_MODS_STREAM_LOCATION, pid);
+		Document parseDocument = XMLUtils.parseDocument(new URL(formatted).openStream(), true);
+		return parseDocument;
+	}
+
 	public static JSONObject item(String pid) {
 		String formatted = String.format(PeriodicalProvideServlet.ITEM_LOCATION, pid);
 		Client c = Client.create();

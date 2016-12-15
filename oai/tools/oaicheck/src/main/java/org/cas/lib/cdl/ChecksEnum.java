@@ -33,6 +33,13 @@ public enum ChecksEnum {
 			return Arrays.asList(new CheckContainsLangElement());
 		}
 	},
+	cdkoairec {
+		@Override
+		public List<IterationControl> createControls() {
+			return Arrays.asList(new CheckOAIRecord());
+		}
+	},
+	
 	all {
 		@Override
 		public List<IterationControl> createControls() {
