@@ -1,31 +1,30 @@
-package org.cas.lib.cdl;
+package org.cas.lib.cdl.changeindex;
 
+import org.cas.lib.cdl.PrivateConnectUtils;
 import org.json.JSONObject;
 
-public class ChangeField {
+public class AddField {
 
-    public static final String SOLR_UDATE_ENDPOINT = "http://localhost:8983/solr/kramerius/update?commit=true";
+	public static final String SOLR_UDATE_ENDPOINT = "http://localhost:8983/solr/kramerius/update?commit=true";
 
     private String pid;
-    
     private String name;
     private Object value;
     
     
-    public ChangeField(String pid, String name, Object value) {
+    public AddField(String pid, String name, Object value) {
         super();
         this.pid = pid;
         this.name = name;
         this.value = value;
     }
-
-
+    
     public JSONObject toJSONObject() {
         JSONObject obj = new JSONObject();
         obj.put("PID", this.pid);
         
         JSONObject setval = new JSONObject();
-        setval.put("set", this.value);
+        setval.put("add", this.value);
         
         obj.put(this.name, setval);
         
@@ -34,21 +33,20 @@ public class ChangeField {
         return doc;
     }
 
-    public JSONObject changeField(String addr) {
+    public JSONObject addValueToArray(String addr) {
         return PrivateConnectUtils.indexDocument(addr, this.pid, this.toJSONObject());
     }
 
-    public JSONObject changeField() {
+    public JSONObject addValueToArray() {
         return PrivateConnectUtils.indexDocument(SOLR_UDATE_ENDPOINT, this.pid, this.toJSONObject());
     }
 
+
     public static void main(String[] args) {
-        if (args.length >1) {
-            
-        }
-        
-        ChangeField chField = new ChangeField("uuid:0eaa6730-9068-11dd-97de-000d606f5dc6", "collection", "pridat");
+    	
+    	AddField chField = new AddField("uuid:9a37d4db-9f59-4bf4-88a1-4692d3f86aaf", "collection", "dalsi");
         System.out.println(chField.toJSONObject());
-        //chField.changeField();
+        chField.addValueToArray();
     }
+
 }

@@ -56,7 +56,8 @@ public class ImageReplaceProcess implements ProcessFOXML {
      */
     @Override
     public byte[] process(final String url, final String pid, InputStream is) throws Exception {
-        Document document = XMLUtils.parseDocument(is, true);
+    	if (is == null) return null;
+    	Document document = XMLUtils.parseDocument(is, true);
         Element docElement = document.getDocumentElement();
         if (docElement.getLocalName().equals("digitalObject")) {
             // not managed streams and should be binary

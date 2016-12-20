@@ -1,5 +1,6 @@
-package org.cas.lib.cdl;
+package org.cas.lib.cdl.changeindex;
 
+import org.cas.lib.cdl.PrivateConnectUtils;
 import org.json.JSONObject;
 
 public class ChangeField {

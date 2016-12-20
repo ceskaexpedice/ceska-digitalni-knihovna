@@ -1,4 +1,4 @@
-package org.cas.lib.cdl;
+package cz.incad.cdk.cdkharvester.changeindex;
 
 import org.json.JSONObject;
 
@@ -47,8 +47,8 @@ public class ChangeField {
             
         }
         
-        ChangeField chField = new ChangeField("uuid:0eaa6730-9068-11dd-97de-000d606f5dc6", "collection", "pridat");
+        ChangeField chField = new ChangeField("uuid:376e1df7-e2a0-4930-8a4e-ad357c2b979b", "collection", "zruseno");
         System.out.println(chField.toJSONObject());
-        //chField.changeField();
+        chField.changeField();
     }
 }

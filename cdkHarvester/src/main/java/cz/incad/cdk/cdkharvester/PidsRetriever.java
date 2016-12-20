@@ -20,6 +20,9 @@ import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 
+import cz.incad.kramerius.utils.IOUtils;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -32,6 +35,7 @@ import java.util.logging.Level;
 import javax.ws.rs.core.MediaType;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
@@ -41,6 +45,7 @@ import org.apache.commons.httpclient.util.URIUtil;
 import org.kramerius.replications.BasicAuthenticationClientFilter;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -88,25 +93,7 @@ public class PidsRetriever {
     private void getDocs() throws Exception {
         String urlStr = harvestUrl + URIUtil.encodeQuery(actual_date);
         logger.log(Level.INFO, "urlStr: {0}", urlStr);
-        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        org.w3c.dom.Document solrDom;
-        Client c = Client.create();
-        // follow redirect
-        c.getProperties().put(
-                ClientConfig.PROPERTY_FOLLOW_REDIRECTS, true);
-        c.setConnectTimeout(2000);
-        c.setReadTimeout(20000);
-        WebResource r = c.resource(urlStr);
-        r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
-        InputStream is;
-        try {
-            is = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
-            solrDom = builder.parse(is);
-        } catch (Exception ex) {
-            logger.log(Level.WARNING, "Retrying...", ex);
-            is = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
-            solrDom = builder.parse(is);
-        }
+        org.w3c.dom.Document solrDom = solrResults(urlStr);
         String xPathStr = "/response/result/@numFound";
         expr = xpath.compile(xPathStr);
         int numDocs = Integer.parseInt((String) expr.evaluate(solrDom, XPathConstants.STRING));
@@ -122,8 +109,35 @@ public class PidsRetriever {
                 qe.add(new DocEntry(pid, to));
             }
         }
-        is.close();
     }
+
+	protected org.w3c.dom.Document solrResults(String urlStr) throws SAXException, IOException, ParserConfigurationException {
+        WebResource r = client(urlStr);
+        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+		InputStream is = null;
+		try {
+        	is = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
+            return builder.parse(is);
+        } catch (Exception ex) {
+            logger.log(Level.WARNING, "Retrying...", ex);
+            is = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
+            return builder.parse(is);
+        } finally {
+        	IOUtils.tryClose(is);
+        }
+	}
+
+	private WebResource client(String urlStr) {
+		Client c = Client.create();
+        // follow redirect
+        c.getProperties().put(
+                ClientConfig.PROPERTY_FOLLOW_REDIRECTS, true);
+        c.setConnectTimeout(2000);
+        c.setReadTimeout(20000);
+        WebResource r = c.resource(urlStr);
+        r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
+		return r;
+	}
 
     final class DocEntry<K, V> implements Map.Entry<K, V> {
 

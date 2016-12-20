@@ -41,9 +41,7 @@ public class ReplicationUtils {
             document.adoptNode(binaryContent);
             binaryContent.setTextContent(new String(Base64.encodeBase64(bos.toByteArray())));
             version.appendChild(binaryContent);
-            
             datastream.setAttribute("CONTROL_GROUP", "M");
-            
         } finally {
             IOUtils.tryClose(is);
         }

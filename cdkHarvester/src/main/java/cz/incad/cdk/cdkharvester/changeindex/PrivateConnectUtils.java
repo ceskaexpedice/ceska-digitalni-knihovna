@@ -1,20 +1,22 @@
-package org.cas.lib.cdl;
+package cz.incad.cdk.cdkharvester.changeindex;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.util.List;
 
 import javax.ws.rs.core.MediaType;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.ClientResponse.Status;
+
+import cz.incad.kramerius.utils.conf.KConfiguration;
 
 public class PrivateConnectUtils {
 
@@ -53,18 +55,32 @@ public class PrivateConnectUtils {
                 .get(String.class);
         System.out.println(t);
         JSONObject jsonObject = new JSONObject(t);
-    	
     	return jsonObject;
     }
+
     
     public static void main(String[] args) throws UnsupportedEncodingException, URISyntaxException {
-    	JSONObject findDoc = findDoc(SOLR_SELECT_ENDPOINT, "uuid:376e1df7-e2a0-4930-8a4e-ad357c2b979b");
-    	JSONObject jsonObject = findDoc.getJSONObject("response");
-    	JSONArray jsonArray = jsonObject.getJSONArray("docs");
-    	if (jsonArray.length() == 1) {
-    		JSONArray jsonArray2 = jsonArray.getJSONObject(0).getJSONArray("collection");
+    	//String solrEndpoint = KConfiguration.getInstance().getSolrHost()+"/select";
+    	String solrEndpoint = "http://cdk.lib.cas.cz/search/api/v5.0/search";
+    	//JSONObject results = findDoc(solrEndpoint, "uuid:376e1df7-e2a0-4930-8a4e-ad357c2b979b");
+    	JSONObject results = findDoc(solrEndpoint, "uuid:4eac74b0-e92c-11dc-9fa1-000d606f5dc7");
+    		
+    	if (ResultsUtils.docsExists(results)) {
+    		System.out.println("Exists ");
+    		if (ResultsUtils.collectionExists(results)) {
+    			System.out.println(" collection exists ");
+    			List<String> disectCollections = ResultsUtils.disectCollections(results);
+    			System.out.println(" Disect collections "+disectCollections);
+    		}
+    	} else {
+    		System.out.println("Doesnt exists");
     	}
-    	
-    	System.out.println(findDoc);
+
+	}
+
+    // TODO:Move
+    public static List<String> disectCollections(String solrEndpoint, String pid) throws UnsupportedEncodingException, URISyntaxException {
+    	JSONObject findDoc = findDoc(solrEndpoint, pid);
+    	return ResultsUtils.disectCollections(findDoc);
 	}
 }
