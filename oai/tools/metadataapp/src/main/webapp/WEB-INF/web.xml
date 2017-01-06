@@ -1,0 +1,23 @@
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+      version="3.0">
+
+
+  <servlet-mapping>
+    <servlet-name>jsp</servlet-name>
+    <url-pattern>*.html</url-pattern>
+  </servlet-mapping>  
+
+  <servlet>
+    <display-name>PeriodicalProvideServlet</display-name>
+    <servlet-name>PeriodicalProvideServlet</servlet-name>
+    <servlet-class>org.cas.lib.cdl.PeriodicalProvideServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>PeriodicalProvideServlet</servlet-name>
+    <url-pattern>/transformed</url-pattern>
+  </servlet-mapping>
+</web-app>

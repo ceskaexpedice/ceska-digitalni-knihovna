@@ -23,9 +23,9 @@ import cz.incad.kramerius.utils.conf.KConfiguration;
  * Meni jmeno zdroje v DC streamu
  * @author pavels
  */
-public class CDKSourceName {
+public class CDKSourceUrl {
 	
-	public static final Logger LOGGER = Logger.getLogger(CDKSourceName.class.getName());
+	public static final Logger LOGGER = Logger.getLogger(CDKSourceUrl.class.getName());
 	
 	public static final String STREAM = "DC";
 	
