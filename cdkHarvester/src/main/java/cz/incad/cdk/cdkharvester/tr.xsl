@@ -13,6 +13,9 @@
     <xsl:variable name="xslfunctions" select="exts:new()" />
     <xsl:param name="collectionPid" select="collectionPid" />
     <xsl:param name="solr_url" select="'http://localhost:8080/solr/select'" />
+	<!--  specified in order to testable -->
+    <xsl:param name="_for_tests" select="false()" />
+
     <xsl:template match="/">
         <add>
             <xsl:for-each select="/response/result/doc">
@@ -23,8 +26,20 @@
                     <xsl:with-param name="str">"<xsl:value-of select="./str[@name='PID']"/>"</xsl:with-param></xsl:call-template></xsl:variable>
                 -->    
                 <xsl:variable name="query">"<xsl:value-of select="./str[@name='PID']"/>"</xsl:variable>    
+				<!-- 
                 <xsl:variable name="search_url"><xsl:value-of select="$solr_url"/>?q=PID:<xsl:value-of select="exts:encode($xslfunctions, $query)"/></xsl:variable>
-                    
+                 -->
+               	<xsl:variable name="search_url">
+				    <xsl:choose>
+			        	<xsl:when test="_for_tests">
+            				<xsl:value-of select="concat($solr_url,'?q=PID:',exts:encode($xslfunctions, $query))" />
+			        	</xsl:when>
+          				<xsl:otherwise>
+			                <xsl:variable name="_pid"><xsl:value-of select="./str[@name='PID']"/></xsl:variable>    
+				        	<xsl:value-of select="concat($solr_url,'/',translate($_pid, ':', '_'))"/>
+			        	</xsl:otherwise>
+			   		</xsl:choose>
+				</xsl:variable>
                     
                     
                 <xsl:for-each select="str">

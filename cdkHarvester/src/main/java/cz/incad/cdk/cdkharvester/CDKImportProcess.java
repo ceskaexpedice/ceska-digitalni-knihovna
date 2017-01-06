@@ -37,10 +37,14 @@ import java.util.logging.Level;
 import cz.incad.kramerius.processes.annotations.ParameterName;
 import cz.incad.kramerius.processes.annotations.Process;
 import cz.incad.kramerius.processes.impl.ProcessStarter;
+import cz.incad.kramerius.utils.IOUtils;
 import cz.incad.kramerius.utils.conf.KConfiguration;
+import cz.incad.kramerius.utils.pid.PIDParser;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -114,6 +118,11 @@ public class CDKImportProcess {
         this.processingChain.add(new ImageReplaceProcess());
     }
 
+    public CDKImportProcess(List<ProcessFOXML> chains) {
+        super();
+        this.processingChain.addAll(chains);
+    }
+    
     @Process
     public static void cdkImport(@ParameterName("url") String url, @ParameterName("name") String name,
             @ParameterName("collectionPid") String collectionPid, @ParameterName("username") String userName,
@@ -189,7 +198,16 @@ public class CDKImportProcess {
         return dir;
     }
 
-    //TODO: Rewrite it
+    
+    public String getCollectionPid() {
+		return collectionPid;
+	}
+
+	public void setCollectionPid(String collectionPid) {
+		this.collectionPid = collectionPid;
+	}
+
+	//TODO: Rewrite it
     public void start(String url, String name, String collectionPid, String userName, String pswd) throws Exception {
 
         config = KConfiguration.getInstance().getConfiguration();
@@ -235,10 +253,20 @@ public class CDKImportProcess {
 		TransformerFactory tfactory = TransformerFactory.newInstance();
         InputStream stylesheet = this.getClass().getResourceAsStream("/cz/incad/cdk/cdkharvester/tr.xsl");
         StreamSource xslt = new StreamSource(stylesheet);
-        transformer = tfactory.newTransformer(xslt);
+        //transformer = tfactory.newTransformer(xslt);
+        this.setTransformer(tfactory.newTransformer(xslt));
 	}
 
-    protected void getDocs(String date) throws Exception {
+	
+    public Transformer getTransformer() {
+		return transformer;
+	}
+
+	public void setTransformer(Transformer transformer) {
+		this.transformer = transformer;
+	}
+
+	protected void getDocs(String date) throws Exception {
         PidsRetriever dr = getPidsRetriever(date);
         while (dr.hasNext()) {
             Map.Entry<String, String> entry = dr.next();
@@ -260,10 +288,16 @@ public class CDKImportProcess {
     protected void replicate(String pid) throws Exception {
     	String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/foxml?collection=" + collectionPid;
         logger.log(Level.FINE, "get foxml from origin {0}...", url);
-        InputStream t = foxml(pid, url);
-        ingest(t, pid);
+        
+        PIDParser parser = new PIDParser(pid);
+        if (!parser.isPagePid()) {
+            InputStream t = foxml(pid, url);
+            ingest(t, pid);
+            index(pid);
+        } else {
+        	logger.info("page pid; github #16"); 
+        }
         //logger.log(Level.INFO, "indexing {0}...", pid);
-        index(pid);
     }
 
 	protected InputStream foxml(String pid, String url) {
@@ -299,7 +333,11 @@ public class CDKImportProcess {
     		logger.info("No inputstream for foxml");
 			return;
     	}
-    	InputStream processingStream = foxml;
+
+    	ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    	IOUtils.copyStreams(foxml, bos);
+    	
+		InputStream processingStream = new ByteArrayInputStream(bos.toByteArray());
         for (int i = 0,ll= this.processingChain.size(); i < ll; i++) {
             ProcessFOXML unit = processingChain.get(i);
             processingStream = new ByteArrayInputStream(unit.process(this.k4Url, pid, processingStream));
@@ -313,7 +351,10 @@ public class CDKImportProcess {
 	}
 
     private void index(String pid) throws Exception {
-    	// test if exits; if not let it does 
+    	if (pid.contains("@")) {
+			logger.info("Page pid; cannot index");
+			return;
+    	}
     	org.json.JSONObject results = findDocFromCurrentIndex(pid);
     	if (ResultsUtils.docsExists(results)) {
     		if (ResultsUtils.collectionExists(results)) {
@@ -327,19 +368,38 @@ public class CDKImportProcess {
     	        chField.changeField(getSolrUpdateEndpoint());
     		}
     	} else {
-        	String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/solrxml";
-            InputStream t = solrxml(url);
+    		
+        	try {
+				String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/solrxml";
+				InputStream t = solrxml(url);
 
-            StreamResult destStream = new StreamResult(new StringWriter());
-            transformer.setParameter("collectionPid", collectionPid);
-            transformer.setParameter("solr_url", config.getString("solrHost") + "/select");
-            transformer.transform(new StreamSource(t), destStream);
-
-            StringWriter sw = (StringWriter) destStream.getWriter();
-            //logger.info(sw.toString());
-            postData(new StringReader(sw.toString()), new StringBuilder());
+				
+				StreamResult destStream = new StreamResult(new StringWriter());
+				changeTranformationVariables();
+				transformer.transform(new StreamSource(t), destStream);
+				
+				StringWriter sw = (StringWriter) destStream.getWriter();
+				//logger.info(sw.toString());
+				postData(new StringReader(sw.toString()), new StringBuilder());
+			} catch (UniformInterfaceException e) {
+				logger.info("cannot index document");
+			}
     	}
     }
+
+	protected void changeTranformationVariables() {
+		transformer.setParameter("collectionPid", getCollectionPid());
+		transformer.setParameter("solr_url", getSolrSelectEndpoint());
+	}
+
+    
+	public static String reducePid(String pid) {
+		// page pid 
+    	if (pid.contains("/@")) {
+    		pid = pid.replace("/@", "@");
+    	}
+		return pid;
+	}
 
 	protected InputStream solrxml(String url) {
 		WebResource r = client(url);
@@ -442,16 +502,16 @@ public class CDKImportProcess {
         }
     }
 
-	private String getSolrUpdateEndpoint() {
+	protected String getSolrUpdateEndpoint() {
 		String solrUrlString = config.getString("solrHost") + "/update";
 		return solrUrlString;
 	}
-	private String getSolrSelectEndpoint() {
+	protected String getSolrSelectEndpoint() {
 		String solrUrlString = config.getString("solrHost") + "/select";
 		return solrUrlString;
 	}
 
-    private void commit() throws java.rmi.RemoteException, Exception {
+    protected void commit() throws java.rmi.RemoteException, Exception {
         String s = "<commit />";
         logger.log(Level.FINE, "commit");
 

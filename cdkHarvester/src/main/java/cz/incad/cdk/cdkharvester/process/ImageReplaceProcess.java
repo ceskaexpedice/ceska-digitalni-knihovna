@@ -18,11 +18,17 @@
 package cz.incad.cdk.cdkharvester.process;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -35,6 +41,8 @@ import cz.incad.kramerius.utils.XMLUtils;
  */
 public class ImageReplaceProcess implements ProcessFOXML {
 
+	public static Logger LOGGER = Logger.getLogger(ImageReplaceProcess.class.getName());
+	
     /** Binary replaced datastram */
     public static final String[] REPLACE_DATASTREAM = { "IMG_THUMB" };
 
@@ -91,7 +99,12 @@ public class ImageReplaceProcess implements ProcessFOXML {
                     if (found != null) {
                         String idAttr = datStreamElm.getAttribute("ID");
                         String imgUrl = url + "/img?uuid=" + pid + "&action=GETRAW&stream=" + idAttr;
-                        ReplicationUtils.binaryContentForStream(document, datStreamElm, version, new URL(imgUrl));
+                        try {
+							binaryContentStream(document, datStreamElm, version, imgUrl);
+						} catch (Exception e) {
+							// something happend; must continue
+							LOGGER.log(Level.SEVERE, e.getMessage(), e);
+						}
                     }
                 }
 
@@ -135,7 +148,12 @@ public class ImageReplaceProcess implements ProcessFOXML {
                         URL foxmlURL = new URL(refAttr);
                         if (!expectingImgURL.equals(foxmlURL)) {
                             // must change
-                            ReplicationUtils.referenceForStream(document, datStreamElm, version, expectingImgURL);
+                            try {
+								referenceStream(document, datStreamElm, version, expectingImgURL);
+							} catch (Exception e) {
+								// something happend; must continue
+								LOGGER.log(Level.SEVERE, e.getMessage(), e);
+							}
                         }
                     }
                 }
@@ -146,4 +164,15 @@ public class ImageReplaceProcess implements ProcessFOXML {
         XMLUtils.print(document, bos);
         return bos.toByteArray();
     }
+
+
+	public void referenceStream(Document document, final Element datStreamElm, Element version, URL expectingImgURL) throws DOMException, IOException, URISyntaxException {
+		ReplicationUtils.referenceForStream(document, datStreamElm, version, expectingImgURL);
+	}
+
+
+	public void binaryContentStream(Document document, final Element datStreamElm, Element version, String imgUrl)
+			throws IOException, MalformedURLException {
+		ReplicationUtils.binaryContentForStream(document, datStreamElm, version, new URL(imgUrl));
+	}
 }
