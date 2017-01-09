@@ -22,10 +22,10 @@ public class CheckExists implements IterationControl {
     private int missing = 0;
     
     @Override
-    public void onPidsIterate(List<String> pids) throws UnsupportedEncodingException {
+    public void onPidsIterate(List<String> pids, String sourceKramerius) throws UnsupportedEncodingException {
         this.counter += pids.size();
         List<String> sourcePids = new ArrayList<String>(pids);
-        String result = PublicConnectUtils.searchInSourceKramerius(URLEncoder.encode(existsQuery(pids), "UTF-8")+"&fl=PID");
+        String result = sourceKramerius != null ? PublicConnectUtils.searchInSourceKramerius(sourceKramerius, URLEncoder.encode(existsQuery(pids), "UTF-8")+"&fl=PID"): PublicConnectUtils.searchInSourceKramerius(URLEncoder.encode(existsQuery(pids), "UTF-8")+"&fl=PID");
         JSONObject resultJSON = new JSONObject(result);
         JSONObject response = resultJSON.getJSONObject("response");
         List<String> pidsFromKNAV = SOLRUtils.pidsDocument(response);

@@ -56,6 +56,17 @@ public enum ChecksEnum {
 	
 	public abstract List<IterationControl> createControls();
 	
+	public static List<IterationControl> argument(String oneArg) {
+		ChecksEnum[] checks = ChecksEnum.values();
+		for (ChecksEnum ch : checks) {
+			if (ch.name().equals(oneArg)) {
+				return ch.createControls();
+			}
+		}
+		LOGGER.severe("cannot recognize param '"+oneArg+"'");
+		return new ArrayList<IterationControl>();
+	}
+	
 	public static List<IterationControl> arguments(String[] args) {
 		List<IterationControl> revals = new ArrayList<>();
 		for (String arg : args) {

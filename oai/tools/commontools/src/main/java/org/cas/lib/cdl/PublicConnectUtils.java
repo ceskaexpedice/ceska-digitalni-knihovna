@@ -15,7 +15,7 @@ import com.sun.jersey.api.client.WebResource;
 public class PublicConnectUtils {
 
     public static final String CDK_SERVER = "http://cdk.lib.cas.cz/search/";
-    public static final String SOURCE_KRAMERIUS = "http://kramerius.lib.cas.cz/search/";
+    public static final String DEFAULT_SOURCE_KRAMERIUS = "http://kramerius.lib.cas.cz/search/";
 
     public static final String DC_TRANSFORMATION = "http://localhost:8080/metadataapp/dc?pid=";
     public static final String OAI_RECORD = "http://cdk.lib.cas.cz/oai?verb=GetRecord&metadataPrefix=ese&identifier=";
@@ -36,7 +36,7 @@ public class PublicConnectUtils {
    }
 
     public static boolean headFullImgSourcecKramerius(String pid) {
-        return headFullImgSourcecKramerius(pid, SOURCE_KRAMERIUS);
+        return headFullImgSourcecKramerius(pid, DEFAULT_SOURCE_KRAMERIUS);
     }
     
     
@@ -45,13 +45,17 @@ public class PublicConnectUtils {
      * @param query
      * @return
      */
-    public static String searchInSourceKramerius(String query) {
+    public static String searchInSourceKramerius(String sourceKramerius, String query) {
         Client c = Client.create();
         WebResource r = c
-                .resource(SOURCE_KRAMERIUS+"api/v5.0/search?q="
+                .resource(sourceKramerius+"api/v5.0/search?q="
                         + query);
         String t = r.accept(MediaType.APPLICATION_JSON).get(String.class);
         return t;
+    }
+
+    public static String searchInSourceKramerius(String query) {
+    	return searchInSourceKramerius(DEFAULT_SOURCE_KRAMERIUS, query);
     }
 
     /**

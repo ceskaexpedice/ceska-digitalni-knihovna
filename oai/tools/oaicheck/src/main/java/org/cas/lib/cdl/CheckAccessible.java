@@ -15,9 +15,9 @@ public class CheckAccessible  implements IterationControl {
     private int notAcessible = 0;
     
     @Override
-    public void onPidsIterate(List<String> pids) throws UnsupportedEncodingException {
+    public void onPidsIterate(List<String> pids, String sourceKramerius) throws UnsupportedEncodingException {
         for (String p : pids) {
-            boolean accesible = PublicConnectUtils.headFullImgSourcecKramerius(p);
+        	boolean accesible = sourceKramerius != null ? PublicConnectUtils.headFullImgSourcecKramerius(p, sourceKramerius) : PublicConnectUtils.headFullImgSourcecKramerius(p);
             if (!accesible) {
                 LOGGER.info("non accessible pid "+p);
                 this.notAcessible +=1;

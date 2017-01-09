@@ -22,7 +22,7 @@ public class CheckContainsLangElement implements IterationControl {
 	private int counter = 0;
 
 	@Override
-	public void onPidsIterate(List<String> pids) throws UnsupportedEncodingException {
+	public void onPidsIterate(List<String> pids, String sourceKramerius) throws UnsupportedEncodingException {
 		for (String pid : pids) {
 			this.counter += 1;
 			try {

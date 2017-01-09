@@ -22,7 +22,7 @@ public class CheckTransformationAccessible implements IterationControl {
 	private List<String> errList = new ArrayList<>();
 	
 	@Override
-	public void onPidsIterate(List<String> pids) throws UnsupportedEncodingException {
+	public void onPidsIterate(List<String> pids, String sourceKramerius) throws UnsupportedEncodingException {
 		for (String pid : pids) {
 			counter += 1;
 			try {
