@@ -291,13 +291,16 @@ public class CDKImportProcess {
         
         PIDParser parser = new PIDParser(pid);
         if (!parser.isPagePid()) {
-            InputStream t = foxml(pid, url);
-            ingest(t, pid);
-            index(pid);
+        	if (!Utils.getSkipList().contains(pid)) {
+            	InputStream t = foxml(pid, url);
+                ingest(t, pid);
+                index(pid);
+        	} else {
+            	logger.log(Level.INFO,"skipping pid {0} because of configuration",pid); 
+        	}
         } else {
         	logger.info("page pid; github #16"); 
         }
-        //logger.log(Level.INFO, "indexing {0}...", pid);
     }
 
 	protected InputStream foxml(String pid, String url) {

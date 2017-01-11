@@ -1,10 +1,14 @@
 package cz.incad.cdk.cdkharvester;
 
+import java.util.List;
+
 import javax.ws.rs.core.MediaType;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+
+import cz.incad.kramerius.utils.conf.KConfiguration;
 
 public class Utils {
 	
@@ -17,14 +21,9 @@ public class Utils {
         ClientResponse response = r.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
         return response.getStatus() == ClientResponse.Status.OK.getStatusCode();
 	}
-
-	public static void main(String[] args) {
-        //p.start("http://vmkramerius.incad.cz:8080/search", "vmkramerius", "vc:534b8b98-82d8-49c7-a751-33e88aaeeea9", "krameriusAdmin", "krameriusAdmin");
-		boolean checkExists = checkExists("http://cdk.lib.cas.cz/search", "uuid:530719f5-ee95-4449-8ce7-12b0f4cadb22");
-		System.out.println(checkExists);
-
-    	if (Utils.checkExists("http://cdk.lib.cas.cz/search", "uuid:530719f5-ee95-4449-8ce7-12b0f4cadb22")) {
-    		System.out.println("RETURNING .... ");
-    	}
+	
+	public static List<String> getSkipList() {
+		return KConfiguration.getInstance().getConfiguration().getList("skip.pids");
 	}
+	
 }
