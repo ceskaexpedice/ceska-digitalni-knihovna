@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<foxml:digitalObject VERSION="1.1" PID="uuid:9a37d4db-9f59-4bf4-88a1-4692d3f86aaf"
+xmlns:foxml="info:fedora/fedora-system:def/foxml#"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="info:fedora/fedora-system:def/foxml# http://www.fedora.info/definitions/1/0/foxml1-1.xsd">
+<foxml:objectProperties>
+<foxml:property NAME="info:fedora/fedora-system:def/model#state" VALUE="Active"/>
+<foxml:property NAME="info:fedora/fedora-system:def/model#label" VALUE="Periodikum"/>
+<foxml:property NAME="info:fedora/fedora-system:def/model#ownerId" VALUE="fedoraAdmin"/>
+<foxml:property NAME="info:fedora/fedora-system:def/model#createdDate" VALUE="2014-07-08T14:39:27.372Z"/>
+<foxml:property NAME="info:fedora/fedora-system:def/view#lastModifiedDate" VALUE="2016-12-15T12:24:03.128Z"/>
+</foxml:objectProperties>
+<foxml:datastream ID="AUDIT" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+<foxml:datastreamVersion ID="AUDIT.0" LABEL="Audit Trail for this object" CREATED="2014-07-08T14:39:27.372Z" MIMETYPE="text/xml" FORMAT_URI="info:fedora/fedora-system:format/xml.fedora.audit">
+<foxml:xmlContent>
+<audit:auditTrail xmlns:audit="info:fedora/fedora-system:def/audit#">
+<audit:record ID="AUDREC1">
+<audit:process type="Fedora API-M"/>
+<audit:action>ingest</audit:action>
+<audit:componentID></audit:componentID>
+<audit:responsibility>fedoraAdmin</audit:responsibility>
+<audit:date>2014-07-08T12:40:56.254Z</audit:date>
+<audit:justification>Initial ingest</audit:justification>
+</audit:record>
+<audit:record ID="AUDREC2">
+<audit:process type="Fedora API-M"/>
+<audit:action>ingest</audit:action>
+<audit:componentID></audit:componentID>
+<audit:responsibility>fedoraAdmin</audit:responsibility>
+<audit:date>2016-10-13T11:18:04.115Z</audit:date>
+<audit:justification>Initial ingest</audit:justification>
+</audit:record>
+</audit:auditTrail>
+</foxml:xmlContent>
+</foxml:datastreamVersion>
+</foxml:datastream>
+<foxml:datastream ID="DC" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+<foxml:datastreamVersion ID="DC.0" LABEL="Dublin Core Record for this object" CREATED="2014-07-08T14:39:27.000Z" MIMETYPE="text/xml" FORMAT_URI="http://www.openarchives.org/OAI/2.0/oai_dc/" SIZE="627">
+<foxml:xmlContent>
+<oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd">
+  <dc:title>Periodikum</dc:title>
+  <dc:date>2000</dc:date>
+  <dc:type>title</dc:type>
+  <dc:type>text</dc:type>
+  <dc:type>model:periodical</dc:type>
+  <dc:format>print</dc:format>
+  <dc:identifier>uuid:9a37d4db-9f59-4bf4-88a1-4692d3f86aaf</dc:identifier>
+  <dc:language>Czech</dc:language>
+  <dc:rights>policy:private</dc:rights>
+</oai_dc:dc>
+</foxml:xmlContent>
+</foxml:datastreamVersion>
+</foxml:datastream>
+<foxml:datastream ID="BIBLIO_MODS" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+<foxml:datastreamVersion ID="BIBLIO_MODS.0" LABEL="BIBLIO_MODS description of current object" CREATED="2014-07-08T14:39:27.000Z" MIMETYPE="text/xml" FORMAT_URI="http://www.loc.gov/mods/v3" SIZE="1485">
+<foxml:xmlContent>
+<mods:modsCollection xmlns:mods="http://www.loc.gov/mods/v3">
+                    <mods:mods ID="MODS_TITLE_0001" version="3.5">
+                        <mods:genre>title</mods:genre>
+                        <mods:identifier type="uuid">9a37d4db-9f59-4bf4-88a1-4692d3f86aaf</mods:identifier>
+                        <mods:language>
+                            <mods:languageTerm authority="iso639-2b" type="code">Czech</mods:languageTerm>
+                        </mods:language>
+                        <mods:originInfo>
+                            <mods:dateIssued>2000</mods:dateIssued>
+                            <mods:issuance>continuing</mods:issuance>
+                        </mods:originInfo>
+                        <mods:physicalDescription>
+                            <mods:form authority="marcform">print</mods:form>
+                        </mods:physicalDescription>
+                        <mods:recordInfo>
+                            <mods:recordCreationDate encoding="iso8601">20140617T205502</mods:recordCreationDate>
+                            <mods:recordChangeDate encoding="iso8601">20140617T210300</mods:recordChangeDate>
+                        </mods:recordInfo>
+                        <mods:titleInfo>
+                            <mods:title>Periodikum</mods:title>
+                        </mods:titleInfo>
+                        <mods:typeOfResource>text</mods:typeOfResource>
+                    </mods:mods>
+                </mods:modsCollection>
+</foxml:xmlContent>
+</foxml:datastreamVersion>
+</foxml:datastream>
+<foxml:datastream ID="POLICY" STATE="A" CONTROL_GROUP="E" VERSIONABLE="false">
+<foxml:datastreamVersion ID="POLICY.0" LABEL="" CREATED="2014-07-08T14:39:27.000Z" MIMETYPE="application/rdf+xml">
+<foxml:contentLocation TYPE="URL" REF="http://local.fedora.server/fedora/get/policy:private/POLICYDEF"/>
+</foxml:datastreamVersion>
+</foxml:datastream>
+<foxml:datastream ID="RELS-EXT" STATE="A" CONTROL_GROUP="X" VERSIONABLE="false">
+<foxml:datastreamVersion ID="RELS-EXT.2" LABEL="RDF Statements about this object" CREATED="2016-12-15T12:24:03.128Z" MIMETYPE="application/rdf+xml" FORMAT_URI="info:fedora/fedora-system:FedoraRELSExt-1.0" SIZE="1056">
+<foxml:xmlContent>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+
+<rdf:Description rdf:about="info:fedora/uuid:9a37d4db-9f59-4bf4-88a1-4692d3f86aaf">
+	<hasModel xmlns="info:fedora/fedora-system:def/model#" rdf:resource="info:fedora/model:periodical"></hasModel>
+	<itemID xmlns="http://www.openarchives.org/OAI/2.0/">uuid:9a37d4db-9f59-4bf4-88a1-4692d3f86aaf</itemID>
+	<policy xmlns="http://www.nsdl.org/ontologies/relationships#">policy:private</policy>
+	<hasVolume xmlns="http://www.nsdl.org/ontologies/relationships#" rdf:resource="info:fedora/uuid:376e1df7-e2a0-4930-8a4e-ad357c2b979b"></hasVolume>
+	<replicatedFrom xmlns="http://www.nsdl.org/ontologies/relationships#">http://vmkramerius.incad.cz:8080/search/handle/uuid:9a37d4db-9f59-4bf4-88a1-4692d3f86aaf</replicatedFrom>
+	<rdf:isMemberOfCollection rdf:resource="info:fedora/vc:07e47af3-58fb-47d2-b1db-c86af07c97b6"></rdf:isMemberOfCollection>
+	<rdf:isMemberOfCollection rdf:resource="info:fedora/vc:ebc58201-b12d-4be5-baa6-b0cdcf7f1ae3"></rdf:isMemberOfCollection>
+</rdf:Description>
+
+</rdf:RDF>
+</foxml:xmlContent>
+</foxml:datastreamVersion>
+</foxml:datastream>
+</foxml:digitalObject>
