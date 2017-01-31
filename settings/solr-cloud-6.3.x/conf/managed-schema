@@ -634,12 +634,12 @@
    
 			
         
-        <field name="fedora.model" type="string"  indexed="true"  stored="true" />
-        <field name="document_type" type="string"  indexed="true"  stored="true" multiValued="true" />
+        <field name="fedora.model" type="string"  indexed="true"  stored="true" docValues="true" />
+        <field name="document_type" type="string"  indexed="true"  stored="true" multiValued="true" docValues="true" />
         <field name="handle" type="string"  indexed="true"  stored="true" />
         <field name="status" type="string"  indexed="true"  stored="true" />
-        <field name="created_date" type="date"  indexed="true"  stored="true" />
-        <field name="modified_date" type="date"  indexed="true"  stored="true" />
+        <field name="created_date" type="date"  indexed="true"  stored="true" docValues="true"/>
+        <field name="modified_date" type="date"  indexed="true"  stored="true" docValues="true"/>
         
         <field name="parent_model" type="string"  indexed="true"  stored="true" />
         <field name="parent_pid" type="string"  indexed="true"  stored="true" multiValued="true" />
@@ -658,7 +658,7 @@
         
         <field name="datum_str" type="string" indexed="true" stored="true"  />
         <field name="datum" type="date" indexed="true" stored="true" required="false" />
-        <field name="rok" type="int" default="0" indexed="true"  stored="true"  />
+        <field name="rok" type="int" default="0" indexed="true"  stored="true"  docValues="true"/>
         <field name="datum_begin" type="int" default="0"  indexed="true"  stored="true"  />
         <field name="datum_end" type="int" default="0"  indexed="true"  stored="true"  />
         <field name="datum_page" type="string"  indexed="true"  stored="true"  />
@@ -667,7 +667,7 @@
         <field name="mdt" type="string"  indexed="true"  stored="true"  />
         <field name="ddt" type="string"  indexed="true"  stored="true"  />
         <field name="dostupnost" type="string"  indexed="true"  stored="true"  />
-        <field name="keywords" type="string"  indexed="true"  stored="true" multiValued="true"  />
+        <field name="keywords" type="string"  indexed="true"  stored="true" multiValued="true"  docValues="true"/>
         <field name="collection" type="string"  indexed="true"  stored="true" multiValued="true"  />
         
         <field name="sec" type="string"  indexed="true"  stored="true"  />
@@ -678,19 +678,19 @@
         <field name="rels_ext_index" type="int" indexed="true"  stored="true" multiValued="true"  />
         <field name="level" type="int" indexed="true"  stored="true"  />
         <field name="dc.title" type="text_fgs"  indexed="true"  stored="true" />
-        <field name="title_sort" type="string"  indexed="true"  stored="true" />
+        <field name="title_sort" type="string"  indexed="true"  stored="true"  docValues="true"/>
         <field name="dc.creator" type="text_fgs"  indexed="true"  stored="true" multiValued="true" />
-        <field name="language" type="string"  indexed="true"  stored="true" multiValued="true"  />
+        <field name="language" type="string"  indexed="true"  stored="true" multiValued="true"  docValues="true"/>
 		
         <field name="dc.description" type="text_fgs"  indexed="true"  stored="true" multiValued="true" />
         <field name="text_ocr" type="text_general_lemmatized"  indexed="true"  stored="true" />
         <field name="details" type="string"  indexed="true"  stored="true" multiValued="true"  />
 		
-        <field name="facet_title" type="string"  indexed="true"  stored="false"  />
-        <field name="browse_title" type="string"  indexed="true"  stored="false" />
+        <field name="facet_title" type="string"  indexed="true"  stored="false" docValues="true" />
+        <field name="browse_title" type="string"  indexed="true"  stored="false" docValues="true" />
         <field name="search_title" type="text_fgs"  indexed="true"  stored="false"  />
-        <field name="facet_autor" type="string"  indexed="true"  stored="true" multiValued="true"  />
-        <field name="browse_autor" type="string"  indexed="true" stored="false" multiValued="true" />
+        <field name="facet_autor" type="string"  indexed="true"  stored="true" multiValued="true"  docValues="true"/>
+        <field name="browse_autor" type="string"  indexed="true" stored="false" multiValued="true"  docValues="true"/>
         <field name="search_autor" type="string_lower"  indexed="true"  stored="false" multiValued="true"  />
         
         <field name="img_full_mime" type="string"  indexed="true"  stored="true"  />
