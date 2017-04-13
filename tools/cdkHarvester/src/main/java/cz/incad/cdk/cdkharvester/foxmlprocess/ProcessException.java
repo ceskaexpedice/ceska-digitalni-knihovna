@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cz.incad.cdk.cdkharvester.process;
+package cz.incad.cdk.cdkharvester.foxmlprocess;
 
 /**
  * @author pavels

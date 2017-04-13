@@ -82,6 +82,9 @@
                 <!--
                 <field name="collection" update="add"><xsl:value-of select="$collectionPid" /></field>
                 -->
+                <field name="compositeId" >
+                   <xsl:value-of select="./str[@name='root_pid']"/>_<xsl:value-of select="./str[@name='PID']"/>
+                </field>
             </doc>
             </xsl:for-each>
         </add>

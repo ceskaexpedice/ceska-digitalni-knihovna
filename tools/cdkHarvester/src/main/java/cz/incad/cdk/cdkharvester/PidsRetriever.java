@@ -51,6 +51,7 @@ import org.xml.sax.SAXException;
  *
  * @author alberto
  */
+@Deprecated
 public class PidsRetriever {
 
     static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(PidsRetriever.class.getName());
