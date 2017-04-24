@@ -2,6 +2,8 @@ package cz.incad.cdk.cdkharvester.iterator;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,6 +16,8 @@ import javax.ws.rs.core.MediaType;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.sun.jersey.api.client.ClientHandlerException;
+import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 
 import cz.incad.kramerius.utils.IOUtils;
@@ -24,7 +28,7 @@ import cz.incad.kramerius.utils.IOUtils;
  */
 public class TitleCDKHarvestIterationImpl extends AbstractCDKHarvestIteration {
 
-	public static final Logger LOGGER = Logger.getLogger(StandardCDKHarvestIterationImpl.class.getName());
+	public static final Logger LOGGER = Logger.getLogger(TitleCDKHarvestIterationImpl.class.getName());
 	private String baseUrl;
 	private String topPid;
 	private List<CDKHarvestIterationItem> processingList;
@@ -38,6 +42,9 @@ public class TitleCDKHarvestIterationImpl extends AbstractCDKHarvestIteration {
 	}
 
 
+	private String itemURL(String k4Url, String pid) {
+		return k4Url + "/api/v5.0/item/"+pid;
+	}
 
 	private String childrenURL(String k4Url, String pid) {
 		return k4Url + "/api/v5.0/item/"+pid+"/children";
@@ -46,8 +53,8 @@ public class TitleCDKHarvestIterationImpl extends AbstractCDKHarvestIteration {
 	
 	@Override
 	public void init() throws CDKHarvestIterationException {
-		// no init is needed
 		try {
+			// deti
 			Stack<String> stack = new Stack<>();
 			stack.push(this.topPid);
 			while(!stack.isEmpty()) {
@@ -57,9 +64,26 @@ public class TitleCDKHarvestIterationImpl extends AbstractCDKHarvestIteration {
 					JSONObject jsonObject = childrenResults.getJSONObject(i);
 					String childP = jsonObject.getString("pid");
 					stack.push(childP);
+					LOGGER.info("adding child pid "+childP);
 					this.processingList.add(new CDKHarvestIterationItemImpl(childP, null));
 				}	
 			}
+			
+			// cesta nahoru
+			JSONObject itemResult = itemResult(itemURL(this.baseUrl,this.topPid));
+			JSONArray jsonArray = itemResult.getJSONArray("context");
+			for (int i = 0,ll=jsonArray.length(); i < ll; i++) {
+				JSONArray path = jsonArray.getJSONArray(i);
+				for (int j = 0,lj=path.length(); j < lj; j++) {
+					JSONObject jsonObject = path.getJSONObject(j);
+					String pid = jsonObject.getString("pid");
+					if(!this.topPid.equals(pid)) {
+						LOGGER.info("adding ctx pid "+pid);
+						this.processingList.add(new CDKHarvestIterationItemImpl(pid, null));
+					}
+				}			
+			}
+			
 		} catch (IOException e) {
 			throw new CDKHarvestIterationException(e);
 		}
@@ -78,23 +102,87 @@ public class TitleCDKHarvestIterationImpl extends AbstractCDKHarvestIteration {
 		}
 		return null;
 	}
-	
-	public JSONArray childrenResults(String urlStr) throws IOException {
-		WebResource r = client(urlStr);
-		try (InputStream is = r.accept(MediaType.APPLICATION_JSON).get(InputStream.class)){
-			return chilrenJSONArray(is);
-		} catch (Exception ex) {
-			LOGGER.log(Level.WARNING, "Retrying...", ex);
+
+	public JSONObject itemResult(String urlStr) throws IOException {
+		try {
+			WebResource r = client(urlStr);
 			try (InputStream is = r.accept(MediaType.APPLICATION_JSON).get(InputStream.class)){
-				return chilrenJSONArray(is);
+				return json(is, JSONObject.class);
+			} catch (Exception ex) {
+				LOGGER.log(Level.WARNING, "Retrying...", ex);
+				try (InputStream is = r.accept(MediaType.APPLICATION_JSON).get(InputStream.class)){
+					return json(is, JSONObject.class);
+				}
 			}
+		} catch (NoSuchMethodException e) {
+			throw new IOException(e);
+		} catch (SecurityException e) {
+			throw new IOException(e);
+		} catch (InstantiationException e) {
+			throw new IOException(e);
+		} catch (IllegalAccessException e) {
+			throw new IOException(e);
+		} catch (IllegalArgumentException e) {
+			throw new IOException(e);
+		} catch (InvocationTargetException e) {
+			throw new IOException(e);
+		} catch (UniformInterfaceException e) {
+			throw new IOException(e);
+		} catch (ClientHandlerException e) {
+			throw new IOException(e);
 		}
 	}
 
-	private JSONArray chilrenJSONArray(InputStream is) throws IOException {
-		String str = IOUtils.readAsString(is, Charset.forName("UTF-8"), true);
-		JSONArray jArray = new JSONArray(str);
-		return jArray;
-	}
 	
+	public JSONArray childrenResults(String urlStr) throws IOException {
+		try {
+			WebResource r = client(urlStr);
+			try (InputStream is = r.accept(MediaType.APPLICATION_JSON).get(InputStream.class)){
+				return json(is, JSONArray.class);
+			} catch (Exception ex) {
+				LOGGER.log(Level.WARNING, "Retrying...", ex);
+				try (InputStream is = r.accept(MediaType.APPLICATION_JSON).get(InputStream.class)){
+					return json(is, JSONArray.class);
+				}
+			}
+		} catch (NoSuchMethodException e) {
+			throw new IOException(e);
+		} catch (SecurityException e) {
+			throw new IOException(e);
+		} catch (InstantiationException e) {
+			throw new IOException(e);
+		} catch (IllegalAccessException e) {
+			throw new IOException(e);
+		} catch (IllegalArgumentException e) {
+			throw new IOException(e);
+		} catch (InvocationTargetException e) {
+			throw new IOException(e);
+		} catch (UniformInterfaceException e) {
+			throw new IOException(e);
+		} catch (ClientHandlerException e) {
+			throw new IOException(e);
+		}
+	}
+
+	private <T> T json(InputStream is, Class<T> clz) throws IOException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		String str = IOUtils.readAsString(is, Charset.forName("UTF-8"), true);
+		Constructor<T> constructor = clz.getConstructor(String.class);
+		T ret = constructor.newInstance(str);
+		return ret;
+	}
+
+	
+	public static void main(String[] args) throws CDKHarvestIterationException {
+		//https://cdk.lib.cas.cz/search/api/v5.0/item/uuid:7a1175e0-679e-43e7-82b4-bbadbd13de94/children
+		//uuid:674e002b-c5e0-4aa7-8f08-6c458df1c8dd
+		//TitleCDKHarvestIterationImpl title = new TitleCDKHarvestIterationImpl("https://cdk.lib.cas.cz/search","uuid:7a1175e0-679e-43e7-82b4-bbadbd13de94");
+		TitleCDKHarvestIterationImpl title = new TitleCDKHarvestIterationImpl("https://cdk.lib.cas.cz/search","uuid:674e002b-c5e0-4aa7-8f08-6c458df1c8dd");
+		title.init();
+		int count = 0;
+		while(title.hasNext()) {
+			count ++;
+			System.out.println(title.next().getPid());
+		}
+		System.out.println("COUNT "+count);
+	}
 }

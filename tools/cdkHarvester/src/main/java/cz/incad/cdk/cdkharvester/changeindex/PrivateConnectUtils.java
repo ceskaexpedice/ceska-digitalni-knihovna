@@ -53,7 +53,6 @@ public class PrivateConnectUtils {
 
         String t = r.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
                 .get(String.class);
-        System.out.println(t);
         JSONObject jsonObject = new JSONObject(t);
     	return jsonObject;
     }

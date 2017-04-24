@@ -1,0 +1,65 @@
+/** templates for cdk harvest */
+group manages;
+
+post(states,bundle) ::=<< >>
+
+form(source,bundle) ::=<<
+
+
+<div style="width:100%">
+    <script language="JavaScript" type="text/javascript"> 
+
+    <!--    
+        // send parameters to server
+        window.onProcessFormSend = function() {
+            var charsThatMustBeEscaped = [':',';','}','{','\\\\'];
+
+			var source = \$('#parametrizedcdkonetitle_source').val().escapeChars(charsThatMustBeEscaped);
+			var uname = \$('#parametrizedcdkonetitle_uname').val().escapeChars(charsThatMustBeEscaped);
+			var pswd = \$('#parametrizedcdkonetitle_pswd').val().escapeChars(charsThatMustBeEscaped);
+
+            var vals = 'url='+source+';username='+uname+';pswd='+pswd;
+            var url = "lr?action=form_post&def=cdksourceharvest&paramsMapping={"+vals+"}&out=text";
+
+            processStarter("cdksourceharvest").start(url);
+        }
+    -->        
+    </script>
+
+
+
+<fieldset style="margin-top:10px;border: 1px solid gray;">
+    <legend>$bundle.("parametrizedcdkonetitle.title")$</legend>
+    <table style="width:100%">
+
+
+    <tr><td colspan="2">
+    <label>$bundle.("parametrizedcdkonetitle.source")$</label>
+    </td></tr>
+
+    <tr><td colspan="2">
+	<input id="parametrizedcdkonetitle_source" type="text" style="width:100%" value="$source$"></input> 
+    </td></tr>
+
+    <tr><td colspan="2">
+    <label>$bundle.("parametrizedcdkonetitle.user")$</label>
+    </td></tr>
+
+    <tr><td colspan="2">
+	<input id="parametrizedcdkonetitle_uname" type="text" style="width:100%"></input> 
+    </td></tr>
+
+    <tr><td colspan="2">
+    <label>$bundle.("parametrizedcdkonetitle.pswd")$</label>
+    </td></tr>
+
+    <tr><td colspan="2">
+	<input id="parametrizedcdkonetitle_pswd" type="password" style="width:100%"></input> 
+    </td></tr>
+        
+    </table>    
+    
+</fieldset>
+</div>
+
+>>

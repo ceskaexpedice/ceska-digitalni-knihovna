@@ -4,9 +4,9 @@ import java.io.IOException;
 
 public interface CheckLiveProcess {
 
-	public void informAboutStart(String pid, String processUuid) throws IOException;
+	public void informAboutStart(String sourcePid, String sourceName, String processUuid) throws IOException;
 	
-	public String getLatest(String pid) throws IOException;
+	public String getLatest(String sourcePid, String sourceName) throws IOException;
 	
-	public boolean isAlive(String pid) throws IOException;
+	public boolean isAlive(String sourcePid, String sourceName) throws IOException;
 }

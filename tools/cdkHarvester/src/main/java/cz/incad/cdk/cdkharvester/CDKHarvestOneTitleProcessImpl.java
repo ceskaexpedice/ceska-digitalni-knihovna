@@ -1,37 +1,51 @@
 package cz.incad.cdk.cdkharvester;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import com.google.inject.Injector;
+
 import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIteration;
 import cz.incad.cdk.cdkharvester.iterator.TitleCDKHarvestIterationImpl;
 import cz.incad.kramerius.processes.annotations.ParameterName;
 import cz.incad.kramerius.processes.annotations.Process;
-import cz.incad.kramerius.processes.impl.ProcessStarter;
+import cz.incad.kramerius.utils.handle.DisectHandle;
 
 public class CDKHarvestOneTitleProcessImpl extends AbstractCDKSourceHarvestProcess {
 
-	private String pid;
 
-	public CDKHarvestOneTitleProcessImpl(String pid) {
+	public CDKHarvestOneTitleProcessImpl() {
 		super();
-		this.pid = pid;
 	}
 
 	@Process
-	public static void cdkTitle(@ParameterName("url") String url, @ParameterName("name") String name,
-			@ParameterName("collectionPid") String collectionPid, @ParameterName("username") String userName,
-			@ParameterName("pswd") String pswd, @ParameterName("pid") String pid) throws Exception {
-		ProcessStarter.updateName("Import CDK from " + name);
-		CDKHarvestOneTitleProcessImpl p = new CDKHarvestOneTitleProcessImpl(pid);
-		p.start(url, name, collectionPid, userName, pswd);
+	public static void cdkTitle(@ParameterName("pid") String title, @ParameterName("source") String source, @ParameterName("username") String userName, @ParameterName("pswd") String pswd) throws Exception {
+		CDKHarvestOneTitleProcessImpl p = new CDKHarvestOneTitleProcessImpl();
+		p.start(disectPid(title), source, userName, pswd);
 	}
 
-	public void start(String url, String name, String collectionPid, String userName, String pswd) throws Exception {
+	private static String disectPid(String title) {
+		try {
+			// check if given title is url
+			new URL(title);
+			return DisectHandle.disectHandle(title);
+		} catch (MalformedURLException e) {
+			// no url, simple pid
+			return title;
+		}
+	}
 
-		initVariables(url, name, collectionPid, userName, pswd);
+	public void start(String pid, String source, String userName, String pswd) throws Exception {
+		Injector inj = injector();
+		initFromGivenSource(pid, source, userName, pswd, inj);
 		initImport();
 		initTransformations();
 
-		CDKHarvestIteration iterator = new TitleCDKHarvestIterationImpl(this.k4Url, this.pid);
+		CDKHarvestIteration iterator = new TitleCDKHarvestIterationImpl(this.k4Url, pid);
+		iterator.init();
+
 		super.process(collectionPid, iterator, null);
 	}
+
 
 }

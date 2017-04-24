@@ -16,6 +16,9 @@
  */
 package cz.incad.cdk.cdkharvester;
 
+import static cz.incad.cdk.cdkharvester.AbstractCDKSourceHarvestProcess.*;
+
+import com.google.inject.Injector;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 
@@ -25,6 +28,7 @@ import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIteration;
 import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIterationException;
 import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIterationItem;
 import cz.incad.cdk.cdkharvester.iterator.StandardCDKHarvestIterationImpl;
+import cz.incad.cdk.cdkharvester.manageprocess.CheckLiveProcess;
 import cz.incad.cdk.cdkharvester.postponed.PostponedItemsList;
 import cz.incad.cdk.cdkharvester.postponed.PostponedItemsListImpl;
 import cz.incad.cdk.cdkharvester.timestamp.ProcessingTimestamps;
@@ -94,7 +98,6 @@ public class CDKSourceHarvestProcessImpl extends AbstractCDKSourceHarvestProcess
 
 	public CDKSourceHarvestProcessImpl(List<ProcessFOXML> chains) {
 		super();
-		this.processingChain.addAll(chains);
 	}
 
 	@Process
@@ -108,19 +111,26 @@ public class CDKSourceHarvestProcessImpl extends AbstractCDKSourceHarvestProcess
 
 	// whole cdk process
 	public void start(String url, String name, String collectionPid, String userName, String pswd) throws Exception {
-
+		
+		Injector injector = injector();
+		
 		// initalization
-		initVariables(url, name, collectionPid, userName, pswd);
+		initFromGivenSource(collectionPid, url, userName, pswd, injector);
 		initImport();
 		initTransformations();
-
+		
+		CheckLiveProcess checkLiveProcess = injector.getInstance(CheckLiveProcess.class);
+		ProcessingTimestamps processingTimestamps = injector.getInstance(ProcessingTimestamps.class);
+		
 		// processing
-		if (!this.checkLiveProcesses.isAlive(System.getProperty(ProcessStarter.UUID_KEY))) {
-			this.checkLiveProcesses.informAboutStart(collectionPid, System.getProperty(ProcessStarter.UUID_KEY));
-			LocalDateTime timestamp = this.processingTimestamp.getTimestamp(collectionPid);
-			CDKHarvestIteration iterator = new StandardCDKHarvestIterationImpl(processingTimestamp.format(timestamp),
+		if (!checkLiveProcess.isAlive( this.collectionPid, this.sourceName)) {
+			checkLiveProcess.informAboutStart(this.collectionPid, this.sourceName, System.getProperty(ProcessStarter.UUID_KEY));
+			LocalDateTime timestamp = processingTimestamps.getTimestamp(this.collectionPid);
+			CDKHarvestIteration iterator = new StandardCDKHarvestIterationImpl(processingTimestamps.format(timestamp),
 					url, userName, pswd);
-			super.process(collectionPid, iterator, this.processingTimestamp);
+			super.process(this.collectionPid, iterator, processingTimestamps);
+		} else {
+			LOGGER.info("previous harvesting is still active");
 		}
 	}
 

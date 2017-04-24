@@ -25,6 +25,8 @@ import javax.xml.transform.stream.StreamSource;
 import org.kramerius.Import;
 import org.kramerius.replications.BasicAuthenticationClientFilter;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -34,16 +36,22 @@ import cz.incad.cdk.cdkharvester.changeindex.AddField;
 import cz.incad.cdk.cdkharvester.changeindex.ChangeField;
 import cz.incad.cdk.cdkharvester.changeindex.PrivateConnectUtils;
 import cz.incad.cdk.cdkharvester.changeindex.ResultsUtils;
+import cz.incad.cdk.cdkharvester.foxmlprocess.ImageReplaceProcess;
 import cz.incad.cdk.cdkharvester.foxmlprocess.ProcessFOXML;
+import cz.incad.cdk.cdkharvester.guice.CDKModule;
 import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIteration;
 import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIterationException;
 import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIterationItem;
 import cz.incad.cdk.cdkharvester.manageprocess.CheckLiveProcess;
 import cz.incad.cdk.cdkharvester.timestamp.ProcessingTimestamps;
 import cz.incad.kramerius.utils.IOUtils;
+import cz.incad.kramerius.utils.StringUtils;
 import cz.incad.kramerius.utils.conf.KConfiguration;
 import cz.incad.kramerius.utils.pid.LexerException;
 import cz.incad.kramerius.utils.pid.PIDParser;
+import cz.incad.kramerius.virtualcollections.CDKSource;
+import cz.incad.kramerius.virtualcollections.CDKSourcesAware;
+import cz.incad.kramerius.virtualcollections.CollectionException;
 
 public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarvestProcess {
 
@@ -51,21 +59,23 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 
 	public static String API_VERSION = "v4.6";
 	public static int ROWS = 500;
-	
+
+	// try to get rid off all these ... 
 	protected String harvestUrl;
 	protected String k4Url;
 	protected String sourceName;
 	protected String collectionPid;
 	protected String userName;
 	protected String pswd;
+	//.................
 
 	protected List<ProcessFOXML> processingChain = new ArrayList<ProcessFOXML>();
-
 	protected Transformer transformer;
 
-	protected CheckLiveProcess checkLiveProcesses;
-
-	protected ProcessingTimestamps processingTimestamp;
+	public AbstractCDKSourceHarvestProcess() {
+		super();
+		this.processingChain.add(new ImageReplaceProcess());
+	}
 
 	protected WebResource client(String url) {
 		Client c = Client.create();
@@ -148,7 +158,6 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 		// setVirtualCollection();
 		this.userName = userName;
 		this.pswd = pswd;
-
 
 	}
 
@@ -298,35 +307,99 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 		return pid;
 	}
 
+	protected static Injector injector() {
+		Injector injector = Guice.createInjector(new CDKModule());
+		return injector;
+	}
+
 	/**
-	 * Basic import process 
-	 * @param sourcePid Source pid
-	 * @param iterator Basic iterator
-	 * @param timestaps Timestamps
+	 * Basic import process
+	 * 
+	 * @param sourcePid
+	 *            Source pid
+	 * @param iterator
+	 *            Basic iterator
+	 * @param timestaps
+	 *            Timestamps
 	 * @throws CDKReplicationException
 	 * @throws IOException
 	 * @throws CDKHarvestIterationException
 	 */
-    protected void process(String sourcePid, CDKHarvestIteration iterator,@Nullable ProcessingTimestamps timestaps) throws CDKReplicationException, IOException, CDKHarvestIterationException {
+	protected void process(String sourcePid, CDKHarvestIteration iterator, @Nullable ProcessingTimestamps timestaps)
+			throws CDKReplicationException, IOException, CDKHarvestIterationException {
 		int processed = 0;
-    	while(iterator.hasNext()) {
-    		CDKHarvestIterationItem iter = iterator.next();
-    		String pid = iter.getPid();
-    		String timestamp = iter.getTimestamp();
-    		if (timestamp != null) {
-        		replicate(pid);
-        		if (timestamp != null) {
-            		timestaps.setTimestamp(sourcePid, timestaps.parse(timestamp));
-        		}
-                processed++;
-    		} else {
-        		replicate(pid);
-                processed++;
-    		}
-            commit();
-    	}
-        commit();
-        LOGGER.log(Level.INFO, "{0} processed", processed);
-    }
+		while (iterator.hasNext()) {
+			CDKHarvestIterationItem iter = iterator.next();
+			String pid = iter.getPid();
+			String timestamp = iter.getTimestamp();
+			if (timestamp != null) {
+				replicate(pid);
+				if (timestamp != null) {
+					timestaps.setTimestamp(sourcePid, timestaps.parse(timestamp));
+				}
+				processed++;
+			} else {
+				replicate(pid);
+				processed++;
+			}
+			commit();
+		}
+		commit();
+		LOGGER.log(Level.INFO, "{0} processed", processed);
+	}
+
+	protected String findURLByGivenPid(List<CDKSource> sourcesList, String pid)
+			throws UnsupportedEncodingException, URISyntaxException, CollectionException {
+		CDKSource source = selectCDKSourceByGivenPid(sourcesList, pid);
+		return source != null ? source.getUrl() : null;
+	}
+
+	protected String findCollectionByGivenPid(List<CDKSource> sourcesList, String pid)
+			throws UnsupportedEncodingException, URISyntaxException {
+		CDKSource source = selectCDKSourceByGivenPid(sourcesList, pid);
+		return source != null ? source.getPid() : null;
+	}
+
+	protected String findSourceNameByGivenPid(List<CDKSource> sourcesList, String pid)
+			throws UnsupportedEncodingException, URISyntaxException {
+		CDKSource source = selectCDKSourceByGivenPid(sourcesList, pid);
+		return source != null ? source.getLabel() : null;
+	}
+
+	protected void initFromGivenSource(String pid, String source, String userName, String pswd, Injector inj)
+			throws CollectionException, UnsupportedEncodingException, URISyntaxException {
+		CDKSourcesAware sources = inj.getInstance(CDKSourcesAware.class);
+		List<CDKSource> sourcesList = sources.getSources();
+		if (StringUtils.isAnyString(source)) {
+			// source has been specified
+			CDKSource cdkSource = sourcesList.stream().filter(t -> t.getUrl().equals(source)).findFirst().get();
+			if (cdkSource != null) {
+				initVariables(source, cdkSource.getLabel(), cdkSource.getPid(), userName, pswd);
+			} else {
+				LOGGER.warning(
+						"Given pid is not source pid " + source + ". I am trying to find sourcePid correct source");
+				// find everything from the solr
+				initVariables(findURLByGivenPid(sourcesList, source), findSourceNameByGivenPid(sourcesList, source),
+						findCollectionByGivenPid(sourcesList, pid), userName, pswd);
+			}
+		} else {
+			// find everything from the solr
+			initVariables(findURLByGivenPid(sourcesList, pid), findSourceNameByGivenPid(sourcesList, pid),
+					findCollectionByGivenPid(sourcesList, pid), userName, pswd);
+
+		}
+	}
+
+	protected CDKSource selectCDKSourceByGivenPid(List<CDKSource> sourcesList, String pid)
+			throws UnsupportedEncodingException, URISyntaxException {
+		org.json.JSONObject results = findDocFromCurrentIndex(pid);
+		if (ResultsUtils.docsExists(results)) {
+			List<CDKSource> disectSources = ResultsUtils.disectSources(results, sourcesList);
+			if (!disectSources.isEmpty()) {
+				return disectSources.get(0);
+			}
+		}
+		return null;
+	}
 
 }

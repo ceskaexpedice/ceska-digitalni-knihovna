@@ -2,9 +2,14 @@ package cz.incad.cdk.cdkharvester.changeindex;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import cz.incad.kramerius.virtualcollections.CDKSource;
 
 public class ResultsUtils {
 
@@ -37,4 +42,9 @@ public class ResultsUtils {
 		return jsonArray.length() > 0;
 	}
 
+	public static List<CDKSource> disectSources(JSONObject result, List<CDKSource> sourcesList) {
+		List<String> disectCollections = disectCollections(result);
+		Map<String, CDKSource> map = sourcesList.stream().collect(Collectors.toMap(CDKSource::getPid,Function.identity()));
+		return disectCollections.stream().filter(c -> map.containsKey(c)).map(c-> map.get(c)).collect(Collectors.toList());
+	}
 }

@@ -22,19 +22,24 @@ import cz.incad.kramerius.virtualcollections.impl.CDKProcessingIndexImpl;
 
 public class ProcessingTimestampsSolrStoreImpl extends AbstractProcessingTimestamps {
 	
-	private static final String TIMESTAMP_KEY = "harvesting_timestamp";
+	private static final String DEFAULT_TIMESTAMP_KEY = "harvesting_timestamp";
 
+	
+	
 	@Override
 	public LocalDateTime getTimestamp(String pid) throws IOException {
 		try {
 			CDKProcessingIndexImpl impl = new CDKProcessingIndexImpl();
 			JSONObject json = impl.getDataByPid(pid);
 			if (json != null) {
-				String harvestingFile = json.getString(TIMESTAMP_KEY);
-				if (harvestingFile != null) {
-					return super.parse(harvestingFile);
-				} else return nullvalue();
-			} else return nullvalue();
+				if (json.has(DEFAULT_TIMESTAMP_KEY)) {
+					String harvestingFile = json.getString(DEFAULT_TIMESTAMP_KEY);
+					if (harvestingFile != null) {
+						return super.parse(harvestingFile);
+					}
+				}
+			} 
+			return nullvalue();
 		} catch (CDKProcessingIndexException e) {
 			throw new IOException(e);
 		}
@@ -49,7 +54,7 @@ public class ProcessingTimestampsSolrStoreImpl extends AbstractProcessingTimesta
 	public void setTimestamp(String pid, LocalDateTime date) throws IOException {
 		try {
 			CDKProcessingIndexImpl impl = new CDKProcessingIndexImpl();
-			impl.updateField(pid, TIMESTAMP_KEY, super.format(date));
+			impl.updateField(pid, DEFAULT_TIMESTAMP_KEY, super.format(date));
 		} catch (CDKProcessingIndexException e) {
 			throw new IOException(e);
 		}
