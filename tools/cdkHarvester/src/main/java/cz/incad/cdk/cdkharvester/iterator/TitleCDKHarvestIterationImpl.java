@@ -171,18 +171,4 @@ public class TitleCDKHarvestIterationImpl extends AbstractCDKHarvestIteration {
 		return ret;
 	}
 
-	
-	public static void main(String[] args) throws CDKHarvestIterationException {
-		//https://cdk.lib.cas.cz/search/api/v5.0/item/uuid:7a1175e0-679e-43e7-82b4-bbadbd13de94/children
-		//uuid:674e002b-c5e0-4aa7-8f08-6c458df1c8dd
-		//TitleCDKHarvestIterationImpl title = new TitleCDKHarvestIterationImpl("https://cdk.lib.cas.cz/search","uuid:7a1175e0-679e-43e7-82b4-bbadbd13de94");
-		TitleCDKHarvestIterationImpl title = new TitleCDKHarvestIterationImpl("https://cdk.lib.cas.cz/search","uuid:674e002b-c5e0-4aa7-8f08-6c458df1c8dd");
-		title.init();
-		int count = 0;
-		while(title.hasNext()) {
-			count ++;
-			System.out.println(title.next().getPid());
-		}
-		System.out.println("COUNT "+count);
-	}
 }
