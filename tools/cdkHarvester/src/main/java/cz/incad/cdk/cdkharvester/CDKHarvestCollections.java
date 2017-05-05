@@ -17,31 +17,26 @@ import com.sun.jersey.api.client.WebResource;
 
 import cz.incad.kramerius.FedoraAccess;
 import cz.incad.kramerius.impl.FedoraAccessImpl;
-import cz.incad.kramerius.processes.annotations.DefaultParameterValue;
-import cz.incad.kramerius.processes.annotations.ParameterName;
-import cz.incad.kramerius.processes.annotations.Process;
 import cz.incad.kramerius.utils.conf.KConfiguration;
-import cz.incad.kramerius.virtualcollections.CDKProcessingIndex;
-import cz.incad.kramerius.virtualcollections.CDKProcessingIndexException;
 import cz.incad.kramerius.virtualcollections.CollectionUtils;
-import cz.incad.kramerius.virtualcollections.CDKProcessingIndex.Type;
-import cz.incad.kramerius.virtualcollections.CollectionUtils.CollectionManagerWait;
-import cz.incad.kramerius.virtualcollections.impl.CDKProcessingIndexImpl;
 import cz.incad.kramerius.virtualcollections.impl.fedora.FedoraCollectionsManagerImpl;
+import cz.incad.kramerius.virtualcollections.impl.support.CDKCollectionsIndexImpl;
+import cz.incad.kramerius.virtualcollections.support.CDKCollectionsIndex;
+import cz.incad.kramerius.virtualcollections.support.CDKCollectionsIndexException;
 
 public class CDKHarvestCollections {
 
 	public static final Logger LOGGER = Logger.getLogger(CDKHarvestCollections.class.getName());
 
-	public static void main(String[] args) throws CDKProcessingIndexException, IOException, InterruptedException {
+	public static void main(String[] args) throws CDKCollectionsIndexException, IOException, InterruptedException {
 		FedoraAccess fedoraAccess = new FedoraAccessImpl(KConfiguration.getInstance(), null);
 		FedoraCollectionsManagerImpl fedoraColManager = new FedoraCollectionsManagerImpl();
 		fedoraColManager.setFedoraAccess(fedoraAccess);
-		CDKProcessingIndex procIndex = new CDKProcessingIndexImpl();
+		CDKCollectionsIndex procIndex = new CDKCollectionsIndexImpl();
 		if (args.length == 2) {
 			collectionFromUrl(fedoraAccess, fedoraColManager, procIndex, args[0], args[1]);
 		} else {
-			JSONArray jsArr = procIndex.getDataByType(CDKProcessingIndex.Type.source);
+			JSONArray jsArr = procIndex.getDataByType(CDKCollectionsIndex.Type.source);
 			for (int i = 0, ll = jsArr.length(); i < ll; i++) {
 				JSONObject json = jsArr.getJSONObject(i);
 				String url = json.getString("url");
@@ -52,8 +47,8 @@ public class CDKHarvestCollections {
 	}
 
 	private static void collectionFromUrl(FedoraAccess fedoraAccess, FedoraCollectionsManagerImpl fedoraColManager,
-			CDKProcessingIndex procIndex, String parent, String url)
-			throws UnsupportedEncodingException, IOException, InterruptedException, CDKProcessingIndexException {
+			CDKCollectionsIndex procIndex, String parent, String url)
+			throws UnsupportedEncodingException, IOException, InterruptedException, CDKCollectionsIndexException {
 		JSONArray collection = getCollection(parent, url);
 		for (int j = 0, lj = collection.length(); j < lj; j++) {
 			JSONObject col = collection.getJSONObject(j);
@@ -78,7 +73,7 @@ public class CDKHarvestCollections {
 			}
 			LOGGER.info("Indexing virtual collection in the fedora repository " + pid);
 			// should be somehow handled because of transaction
-			procIndex.index(Type.collection, col);
+			procIndex.index(CDKCollectionsIndex.Type.collection, col);
 		}
 	}
 
@@ -98,7 +93,7 @@ public class CDKHarvestCollections {
 			nVal.put("pid", jsonObject.getString("pid"));
 			nVal.put("canLeave", jsonObject.getBoolean("canLeave"));
 			nVal.put("name", jsonObject.getString("pid"));
-			nVal.put("type", Type.collection.name());
+			nVal.put("type", CDKCollectionsIndex.Type.collection.name());
 			nVal.put("description_txt_en", jsonObject.getJSONObject("descs").getString("en"));
 			nVal.put("description_txt_cs", jsonObject.getJSONObject("descs").getString("cs"));
 			nVal.put("path", parent + "/" + jsonObject.getString("pid"));

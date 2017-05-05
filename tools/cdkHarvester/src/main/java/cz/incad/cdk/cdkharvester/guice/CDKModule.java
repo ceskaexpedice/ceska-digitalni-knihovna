@@ -12,12 +12,12 @@ import cz.incad.cdk.cdkharvester.timestamp.ProcessingTimestampsSolrStoreImpl;
 import cz.incad.kramerius.FedoraAccess;
 import cz.incad.kramerius.impl.FedoraAccessImpl;
 import cz.incad.kramerius.statistics.StatisticsAccessLog;
-import cz.incad.kramerius.virtualcollections.CDKProcessingIndex;
 import cz.incad.kramerius.virtualcollections.CDKSourcesAware;
 import cz.incad.kramerius.virtualcollections.CollectionsManager;
-import cz.incad.kramerius.virtualcollections.impl.CDKProcessingIndexImpl;
 import cz.incad.kramerius.virtualcollections.impl.cdk.CDKProcessingCollectionManagerImpl;
 import cz.incad.kramerius.virtualcollections.impl.solr.SolrCollectionManagerImpl;
+import cz.incad.kramerius.virtualcollections.impl.support.CDKCollectionsIndexImpl;
+import cz.incad.kramerius.virtualcollections.support.CDKCollectionsIndex;
 
 public class CDKModule extends AbstractModule {
 
@@ -27,7 +27,7 @@ public class CDKModule extends AbstractModule {
         bind(FedoraAccess.class).annotatedWith(Names.named("rawFedoraAccess")).to(FedoraAccessImpl.class).in(Scopes.SINGLETON);
         bind(StatisticsAccessLog.class).toProvider(Providers.of(null));
 
-		bind(CDKProcessingIndex.class).to(CDKProcessingIndexImpl.class);
+		bind(CDKCollectionsIndex.class).to(CDKCollectionsIndexImpl.class);
         bind(CollectionsManager.class).annotatedWith(Names.named("solr")).to(SolrCollectionManagerImpl.class);
         bind(CollectionsManager.class).annotatedWith(Names.named("cdk")).to(CDKProcessingCollectionManagerImpl.class);
         bind(CDKSourcesAware.class).to(CDKProcessingCollectionManagerImpl.class);

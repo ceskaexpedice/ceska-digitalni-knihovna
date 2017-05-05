@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cz.incad.cdk.cdkharvester.foxmlprocess.ProcessFOXML;
+import cz.incad.kramerius.virtualcollections.CDKStateSupport.CDKState;
 
 /**
  * Base interface for cdk harvest. 
@@ -42,7 +43,7 @@ public interface CDKSourceHarvestProcess {
 	 * @param pid PID of document
 	 * @throws CDKReplicationException
 	 */
-	public void replicate(String pid) throws CDKReplicationException;
+	public void replicate(String pid, String timeStamp, CDKState state) throws CDKReplicationException;
 
 	/**
 	 * Ingesting to fedora

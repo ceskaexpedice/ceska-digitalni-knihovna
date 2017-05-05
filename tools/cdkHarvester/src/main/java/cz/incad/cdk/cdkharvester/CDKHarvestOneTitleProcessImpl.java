@@ -44,7 +44,7 @@ public class CDKHarvestOneTitleProcessImpl extends AbstractCDKSourceHarvestProce
 		CDKHarvestIteration iterator = new TitleCDKHarvestIterationImpl(this.k4Url, pid);
 		iterator.init();
 
-		super.process(collectionPid, iterator, null);
+		super.process(collectionPid, iterator, null, null);
 	}
 
 

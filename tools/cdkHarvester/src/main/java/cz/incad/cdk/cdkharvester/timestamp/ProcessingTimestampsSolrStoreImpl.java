@@ -16,8 +16,8 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 
 import cz.incad.kramerius.utils.conf.KConfiguration;
-import cz.incad.kramerius.virtualcollections.CDKProcessingIndexException;
-import cz.incad.kramerius.virtualcollections.impl.CDKProcessingIndexImpl;
+import cz.incad.kramerius.virtualcollections.impl.support.CDKCollectionsIndexImpl;
+import cz.incad.kramerius.virtualcollections.support.CDKCollectionsIndexException;
 
 
 public class ProcessingTimestampsSolrStoreImpl extends AbstractProcessingTimestamps {
@@ -29,7 +29,7 @@ public class ProcessingTimestampsSolrStoreImpl extends AbstractProcessingTimesta
 	@Override
 	public LocalDateTime getTimestamp(String pid) throws IOException {
 		try {
-			CDKProcessingIndexImpl impl = new CDKProcessingIndexImpl();
+			CDKCollectionsIndexImpl impl = new CDKCollectionsIndexImpl();
 			JSONObject json = impl.getDataByPid(pid);
 			if (json != null) {
 				if (json.has(DEFAULT_TIMESTAMP_KEY)) {
@@ -40,7 +40,7 @@ public class ProcessingTimestampsSolrStoreImpl extends AbstractProcessingTimesta
 				}
 			} 
 			return nullvalue();
-		} catch (CDKProcessingIndexException e) {
+		} catch (CDKCollectionsIndexException e) {
 			throw new IOException(e);
 		}
 	}
@@ -53,9 +53,9 @@ public class ProcessingTimestampsSolrStoreImpl extends AbstractProcessingTimesta
 	@Override
 	public void setTimestamp(String pid, LocalDateTime date) throws IOException {
 		try {
-			CDKProcessingIndexImpl impl = new CDKProcessingIndexImpl();
+			CDKCollectionsIndexImpl impl = new CDKCollectionsIndexImpl();
 			impl.updateField(pid, DEFAULT_TIMESTAMP_KEY, super.format(date));
-		} catch (CDKProcessingIndexException e) {
+		} catch (CDKCollectionsIndexException e) {
 			throw new IOException(e);
 		}
 	}

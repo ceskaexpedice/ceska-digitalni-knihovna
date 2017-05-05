@@ -16,62 +16,22 @@
  */
 package cz.incad.cdk.cdkharvester;
 
-import static cz.incad.cdk.cdkharvester.AbstractCDKSourceHarvestProcess.*;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import com.google.inject.Injector;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.WebResource;
 
 import cz.incad.cdk.cdkharvester.foxmlprocess.ImageReplaceProcess;
 import cz.incad.cdk.cdkharvester.foxmlprocess.ProcessFOXML;
 import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIteration;
-import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIterationException;
-import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIterationItem;
 import cz.incad.cdk.cdkharvester.iterator.StandardCDKHarvestIterationImpl;
 import cz.incad.cdk.cdkharvester.manageprocess.CheckLiveProcess;
-import cz.incad.cdk.cdkharvester.postponed.PostponedItemsList;
-import cz.incad.cdk.cdkharvester.postponed.PostponedItemsListImpl;
 import cz.incad.cdk.cdkharvester.timestamp.ProcessingTimestamps;
-import cz.incad.kramerius.Constants;
-import cz.incad.kramerius.processes.States;
-import java.io.File;
-import java.io.IOException;
-import java.util.logging.Level;
-
 import cz.incad.kramerius.processes.annotations.ParameterName;
 import cz.incad.kramerius.processes.annotations.Process;
 import cz.incad.kramerius.processes.impl.ProcessStarter;
-import cz.incad.kramerius.utils.conf.KConfiguration;
-import cz.incad.kramerius.virtualcollections.CDKProcessingIndex;
-import cz.incad.kramerius.virtualcollections.impl.CDKProcessingIndexImpl;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.Writer;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
-import java.text.ParseException;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import javax.ws.rs.core.MediaType;
-
-import net.sf.json.JSONObject;
-import org.apache.commons.configuration.Configuration;
-import org.codehaus.jackson.map.ser.ArraySerializers;
-import org.kramerius.Import;
-import org.kramerius.replications.*;
+import cz.incad.kramerius.virtualcollections.CDKStateSupport.CDKState;
 
 /**
  * CDK import process
@@ -128,7 +88,7 @@ public class CDKSourceHarvestProcessImpl extends AbstractCDKSourceHarvestProcess
 			LocalDateTime timestamp = processingTimestamps.getTimestamp(this.collectionPid);
 			CDKHarvestIteration iterator = new StandardCDKHarvestIterationImpl(processingTimestamps.format(timestamp),
 					url, userName, pswd);
-			super.process(this.collectionPid, iterator, processingTimestamps);
+			super.process(this.collectionPid, iterator, processingTimestamps, CDKState.HARVESTED);
 		} else {
 			LOGGER.info("previous harvesting is still active");
 		}

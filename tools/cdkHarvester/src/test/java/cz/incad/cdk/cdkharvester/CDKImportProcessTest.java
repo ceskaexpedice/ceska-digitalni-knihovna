@@ -136,7 +136,7 @@ public class CDKImportProcessTest extends TestCase {
 		// set for test variable
 		p.getTransformer().setParameter("_for_tests", true);
 		
-		p.process("vc:test_collection", iterator, processingTimestamps);
+		p.process("vc:test_collection", iterator, processingTimestamps, null);
 		//p.processDocs("1900-01-01T00:00:00.002Z","vc:test_collection",processingTimestamps);
 	}
 

@@ -22,6 +22,7 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.json.JSONObject;
 import org.kramerius.Import;
 import org.kramerius.replications.BasicAuthenticationClientFilter;
 
@@ -44,6 +45,7 @@ import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIterationException;
 import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIterationItem;
 import cz.incad.cdk.cdkharvester.manageprocess.CheckLiveProcess;
 import cz.incad.cdk.cdkharvester.timestamp.ProcessingTimestamps;
+import cz.incad.kramerius.processes.impl.ProcessStarter;
 import cz.incad.kramerius.utils.IOUtils;
 import cz.incad.kramerius.utils.StringUtils;
 import cz.incad.kramerius.utils.conf.KConfiguration;
@@ -51,6 +53,8 @@ import cz.incad.kramerius.utils.pid.LexerException;
 import cz.incad.kramerius.utils.pid.PIDParser;
 import cz.incad.kramerius.virtualcollections.CDKSource;
 import cz.incad.kramerius.virtualcollections.CDKSourcesAware;
+import cz.incad.kramerius.virtualcollections.CDKStateSupport;
+import cz.incad.kramerius.virtualcollections.CDKStateSupport.CDKState;
 import cz.incad.kramerius.virtualcollections.CollectionException;
 
 public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarvestProcess {
@@ -69,6 +73,7 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 	protected String pswd;
 	//.................
 
+	
 	protected List<ProcessFOXML> processingChain = new ArrayList<ProcessFOXML>();
 	protected Transformer transformer;
 
@@ -109,16 +114,24 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 		return solrUrlString;
 	}
 
-	public void replicate(String pid) throws CDKReplicationException {
+	public void replicate(String pid, String timeStamp, CDKState updatingState) throws CDKReplicationException {
 		try {
 			String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/foxml?collection=" + collectionPid;
-			LOGGER.log(Level.FINE, "get foxml from origin {0}...", url);
+			LOGGER.log(Level.FINE, "get foxml from orc igin {0}...", url);
 			PIDParser parser = new PIDParser(pid);
 			if (!parser.isPagePid()) {
 				if (!Utils.getSkipList().contains(pid)) {
-					InputStream t = foxml(pid, url);
-					ingest(t, pid);
-					index(pid);
+					
+					try {
+						InputStream t = foxml(pid, url);
+						ingest(t, pid);
+						index(pid);
+					} finally {
+						if (updatingState != null) {
+							updateState(pid, timeStamp,updatingState);
+						}
+					}
+					
 				} else {
 					LOGGER.log(Level.INFO, "skipping pid {0} because of configuration", pid);
 				}
@@ -128,6 +141,23 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 		} catch (LexerException e) {
 			LOGGER.log(Level.SEVERE, e.getMessage(), e);
 		}
+	}
+
+	static String authToken() {
+        return System.getProperty(ProcessStarter.AUTH_TOKEN_KEY);
+    }
+
+	// TODO : some 
+	private void updateState(String pid, String timeStamp,CDKState updatingState) {
+		String appUrl = KConfiguration.getInstance().getApplicationURL();
+		String url = appUrl + (appUrl.endsWith("/") ? "" : "/")+ "cdkmanage?action=INTRODUCESTATE&pid=" + pid+"&timestamp="+timeStamp;
+			Client c = Client.create();
+        WebResource r = c
+                .resource(url);
+
+        String t = r.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
+        		.header("auth-token", authToken()).get(String.class);
+        
 	}
 
 	@Override
@@ -273,6 +303,7 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 		}
 	}
 
+	
 	public InputStream solrxml(String url) {
 		WebResource r = client(url);
 		InputStream t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
@@ -325,7 +356,7 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 	 * @throws IOException
 	 * @throws CDKHarvestIterationException
 	 */
-	protected void process(String sourcePid, CDKHarvestIteration iterator, @Nullable ProcessingTimestamps timestaps)
+	protected void process(String sourcePid,  CDKHarvestIteration iterator , @Nullable ProcessingTimestamps timestaps, @Nullable  CDKStateSupport.CDKState updatingState)
 			throws CDKReplicationException, IOException, CDKHarvestIterationException {
 		int processed = 0;
 		while (iterator.hasNext()) {
@@ -333,15 +364,17 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 			String pid = iter.getPid();
 			String timestamp = iter.getTimestamp();
 			if (timestamp != null) {
-				replicate(pid);
+				replicate(pid, timestamp, updatingState);
 				if (timestamp != null) {
 					timestaps.setTimestamp(sourcePid, timestaps.parse(timestamp));
 				}
 				processed++;
 			} else {
-				replicate(pid);
+				replicate(pid, timestamp, updatingState);
+				
 				processed++;
 			}
+
 			commit();
 		}
 		commit();

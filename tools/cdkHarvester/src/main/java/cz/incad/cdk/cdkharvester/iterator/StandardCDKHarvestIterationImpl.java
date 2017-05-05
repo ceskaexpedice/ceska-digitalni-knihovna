@@ -139,6 +139,4 @@ public class StandardCDKHarvestIterationImpl extends  AbstractCDKHarvestIteratio
 			IOUtils.tryClose(is);
 		}
 	}
-
-
 }
