@@ -304,7 +304,7 @@ public class CDKImportProcess {
     }
 
 	protected InputStream foxml(String pid, String url) {
-		WebResource r = client(url);
+		WebResource r = client(url, this.userName, this.pswd);
         try {
             return r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
         } catch (UniformInterfaceException ex2) {
@@ -322,10 +322,14 @@ public class CDKImportProcess {
         }
 	}
 
-	private WebResource client(String url) {
+	public static WebResource client(String url, String userName, String pswd) {
 		Client c = Client.create();
-        c.setConnectTimeout(2000);
-        c.setReadTimeout(60000);
+		int connectionTimeout = KConfiguration.getInstance().getConfiguration().getInt("cdk.client.connection.timeout", 2000);
+		int readTimeout = KConfiguration.getInstance().getConfiguration().getInt("cdk.client.read.timeout", 600000);
+		logger.info("connection timeout: "+connectionTimeout);
+		logger.info("read timeout: "+readTimeout);
+		c.setConnectTimeout(connectionTimeout);
+        c.setReadTimeout(readTimeout);
         WebResource r = c.resource(url);
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
 		return r;
@@ -405,7 +409,7 @@ public class CDKImportProcess {
 	}
 
 	protected InputStream solrxml(String url) {
-		WebResource r = client(url);
+		WebResource r = client(url, this.userName, this.pswd);
 		InputStream t = r.accept(MediaType.APPLICATION_XML).get(InputStream.class);
 		return t;
 	}
