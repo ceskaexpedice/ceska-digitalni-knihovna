@@ -112,7 +112,7 @@ public class PidsRetriever {
     }
 
 	protected org.w3c.dom.Document solrResults(String urlStr) throws SAXException, IOException, ParserConfigurationException {
-        WebResource r = client(urlStr);
+        WebResource r = CDKImportProcess.client(urlStr,userName,pswd);
         DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 		InputStream is = null;
 		try {
@@ -126,7 +126,8 @@ public class PidsRetriever {
         	IOUtils.tryClose(is);
         }
 	}
-
+	
+	/*
 	private WebResource client(String urlStr) {
 		Client c = Client.create();
         // follow redirect
@@ -137,7 +138,7 @@ public class PidsRetriever {
         WebResource r = c.resource(urlStr);
         r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
 		return r;
-	}
+	}*/
 
     final class DocEntry<K, V> implements Map.Entry<K, V> {
 
