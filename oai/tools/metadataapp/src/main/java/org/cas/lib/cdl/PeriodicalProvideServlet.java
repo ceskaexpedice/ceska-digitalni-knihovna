@@ -52,10 +52,10 @@ public class PeriodicalProvideServlet extends HttpServlet {
 
 	public static final Logger LOGGER = Logger.getLogger(PeriodicalProvideServlet.class.getName());
 
-	public static final String DC_STREAM_LOCATION = "http://cdk.lib.cas.cz/search/api/v5.0/item/%s/streams/DC";
-	public static final String BIBLIO_MODS_STREAM_LOCATION = "http://cdk.lib.cas.cz/search/api/v5.0/item/%s/streams/BIBLIO_MODS";
-	public static final String ITEM_LOCATION = "http://cdk.lib.cas.cz/search/api/v5.0/item/%s";
-	public static final String CDK_LOCATION = "http://cdk.lib.cas.cz/search/%s";
+	public static final String DC_STREAM_LOCATION = "https://cdk.lib.cas.cz/search/api/v5.0/item/%s/streams/DC";
+	public static final String BIBLIO_MODS_STREAM_LOCATION = "https://cdk.lib.cas.cz/search/api/v5.0/item/%s/streams/BIBLIO_MODS";
+	public static final String ITEM_LOCATION = "https://cdk.lib.cas.cz/search/api/v5.0/item/%s";
+	public static final String CDK_LOCATION = "https://cdk.lib.cas.cz/search/%s";
 
 	
 	private static String getPid(HttpServletRequest req) {

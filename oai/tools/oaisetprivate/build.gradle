@@ -11,9 +11,3 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
-
-http://cdk.lib.cas.cz/oai?verb=GetRecord&metadataPrefix=ese&identifier=uuid:4240f893-7853-4088-9a07-a6cdb81f3631
-http://cdk.lib.cas.cz/oai?verb=GetRecord&metadataPrefix=ese&identifier=uuid:4240f893-7853-4088-9a07-a6cdb81f3631
-
-
-Instalace SOLR 

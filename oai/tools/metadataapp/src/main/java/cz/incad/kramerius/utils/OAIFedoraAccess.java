@@ -66,6 +66,13 @@ public class OAIFedoraAccess implements FedoraAccess {
 			throw new IOException(e);
 		}
 	}
+	
+	
+
+	@Override
+	public boolean isObjectAvailable(String arg0) throws IOException {
+		throw new UnsupportedOperationException("this is unsupported");
+	}
 
 	@Override
 	public InputStream getDataStream(String arg0, String arg1) throws IOException {
