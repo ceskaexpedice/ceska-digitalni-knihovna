@@ -57,9 +57,36 @@ public class PeriodicalProvideServlet extends HttpServlet {
 	public static final String ITEM_LOCATION = "https://cdk.lib.cas.cz/search/api/v5.0/item/%s";
 	public static final String CDK_LOCATION = "https://cdk.lib.cas.cz/search/%s";
 
+	public static final String HANDLE_REPLACEMENT = "https://cdk.lib.cas.cz/client/handle/";
+	
+	
 	
 	private static String getPid(HttpServletRequest req) {
 		return req.getParameter("pid");
+	}
+
+	public static void changeIdentifier(final Document dc) {
+		List<Element> elements = XMLUtils.getElements(dc.getDocumentElement(), new XMLUtils.ElementsFilter() {
+			@Override
+			public boolean acceptElement(Element element) {
+				if (element.getNamespaceURI().equals("http://purl.org/dc/elements/1.1/")) {
+					if (element.getLocalName().equals("identifier")) {
+						String cnt = element.getTextContent();
+						if (cnt.startsWith("uuid:")) {
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+		});
+		
+		for (Element uuidElem : elements) {
+			String cnt = uuidElem.getTextContent();
+			Element nuuid = dc.createElementNS("http://purl.org/dc/elements/1.1/","dc:identifier");
+			nuuid.setTextContent(HANDLE_REPLACEMENT+cnt);
+			dc.getDocumentElement().insertBefore(nuuid, uuidElem);
+		}
 	}
 
 	private CachedAccessToJson jsonCache;
@@ -187,12 +214,17 @@ public class PeriodicalProvideServlet extends HttpServlet {
 							langElement.setTextContent(
 									langDetect.detectLanguage(dcCache.getForPath(pid, jsonCache)));
 
+							changeIdentifier(dc);
+
 							resp.setContentType("text/xml; charset=utf-8");
 							XMLUtils.print(dc, resp.getWriter());
 						} else {
 							// forward dc
+							changeIdentifier(dc);
 							resp.setContentType("text/xml; charset=utf-8");
+
 							XMLUtils.print(dc, resp.getWriter());
+
 						}
 					}
 				} catch (DOMException e) {
