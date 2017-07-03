@@ -56,7 +56,11 @@ public class PeriodicalProvideServlet extends HttpServlet {
 	public static final String BIBLIO_MODS_STREAM_LOCATION = "https://cdk.lib.cas.cz/search/api/v5.0/item/%s/streams/BIBLIO_MODS";
 	public static final String ITEM_LOCATION = "https://cdk.lib.cas.cz/search/api/v5.0/item/%s";
 	public static final String CDK_LOCATION = "https://cdk.lib.cas.cz/search/%s";
-
+	
+	/**  client location */
+	public static final String CDK_CLIENT_LOCATION = "https://cdk.lib.cas.cz/client/%s";
+	
+	/** handle for detecting uuid */
 	public static final String HANDLE_REPLACEMENT = "https://cdk.lib.cas.cz/client/handle/";
 	
 	
@@ -138,7 +142,7 @@ public class PeriodicalProvideServlet extends HttpServlet {
 							}
 						}
 
-						String formattedURL = String.format(PeriodicalProvideServlet.CDK_LOCATION, "handle/"+pid);
+						String formattedURL = String.format(PeriodicalProvideServlet.CDK_CLIENT_LOCATION, "handle/"+pid);
 
 						Element elementShownAt = europeana.createElementNS("http://www.europeana.eu/schemas/ese/","europeana:isShownAt");
 						elementShownAt.setTextContent(formattedURL);
