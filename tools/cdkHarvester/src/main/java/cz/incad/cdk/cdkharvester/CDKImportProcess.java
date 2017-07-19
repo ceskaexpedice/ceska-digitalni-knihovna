@@ -134,6 +134,14 @@ public class CDKImportProcess {
         p.start(url, name, collectionPid, userName, pswd);
     }
 
+    protected boolean getIngestWait() {
+        return KConfiguration.getInstance().getConfiguration().getBoolean("cdk.ingest.wait.flag", false);
+    }
+
+    protected long getIngestWaitMilliseconds() {
+        return KConfiguration.getInstance().getConfiguration().getLong("cdk.ingest.wait.millis", 2000);
+    }
+
     protected String getStatus(String uuid) throws Exception {
         Client c = Client.create();
         WebResource r = c.resource(config.getString("_fedoraTomcatHost") + "/search/api/v4.6/processes/" + uuid);
@@ -348,6 +356,16 @@ public class CDKImportProcess {
         for (int i = 0,ll= this.processingChain.size(); i < ll; i++) {
             ProcessFOXML unit = processingChain.get(i);
             processingStream = new ByteArrayInputStream(unit.process(this.k4Url, pid, processingStream));
+        }
+
+        if (getIngestWait()) {
+            try {
+                long millis = getIngestWaitMilliseconds();
+                logger.info("waiting for "+millis+" ms");
+                Thread.sleep(millis);
+            } catch (InterruptedException e) {
+                logger.log(Level.SEVERE, e.getMessage(),e);
+            }
         }
         rawIngest(pid, processingStream);
     }
