@@ -122,11 +122,11 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 	}
 
 	protected boolean getIngestWait() {
-		return KConfiguration.getInstance().getConfiguration().getBoolean("ingest.wait.flag", false);
+		return KConfiguration.getInstance().getConfiguration().getBoolean("cdk.ingest.wait.flag", false);
 	}
 
 	protected long getIngestWaitMilliseconds() {
-		return KConfiguration.getInstance().getConfiguration().getLong("ingest.wait.millis", 2000);
+		return KConfiguration.getInstance().getConfiguration().getLong("cdk.ingest.wait.millis", 2000);
 	}
 
 	public void replicate(String pid, String timeStamp, CDKState updatingState) throws CDKReplicationException {
@@ -266,6 +266,7 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 			if (getIngestWait()) {
 				try {
 					long millis = getIngestWaitMilliseconds();
+					LOGGER.info("waiting for "+millis +" ms");
 					Thread.sleep(millis);
 				} catch (InterruptedException e) {
 					LOGGER.log(Level.SEVERE, e.getMessage(),e);
