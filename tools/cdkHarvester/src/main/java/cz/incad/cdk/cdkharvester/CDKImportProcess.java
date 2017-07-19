@@ -24,14 +24,14 @@ import cz.incad.cdk.cdkharvester.changeindex.AddField;
 import cz.incad.cdk.cdkharvester.changeindex.ChangeField;
 import cz.incad.cdk.cdkharvester.changeindex.PrivateConnectUtils;
 import cz.incad.cdk.cdkharvester.changeindex.ResultsUtils;
-import cz.incad.cdk.cdkharvester.postponed.PostponedItemsList;
-import cz.incad.cdk.cdkharvester.postponed.PostponedItemsListImpl;
 import cz.incad.cdk.cdkharvester.process.ImageReplaceProcess;
 import cz.incad.cdk.cdkharvester.process.ProcessFOXML;
 import cz.incad.kramerius.Constants;
+import cz.incad.kramerius.impl.FedoraAccessImpl;
 import cz.incad.kramerius.processes.States;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.logging.Level;
 
 import cz.incad.kramerius.processes.annotations.ParameterName;
@@ -64,7 +64,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.MediaType;
@@ -76,9 +75,9 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import net.sf.json.JSONObject;
 import org.apache.commons.configuration.Configuration;
-import org.codehaus.jackson.map.ser.ArraySerializers;
 import org.kramerius.Import;
 import org.kramerius.replications.*;
+import org.w3c.dom.Document;
 
 /**
  * CDK import process
@@ -138,9 +137,20 @@ public class CDKImportProcess {
         return KConfiguration.getInstance().getConfiguration().getBoolean("cdk.ingest.wait.flag", false);
     }
 
+
     protected long getIngestWaitMilliseconds() {
         return KConfiguration.getInstance().getConfiguration().getLong("cdk.ingest.wait.millis", 2000);
     }
+
+    protected boolean getFakeMode() {
+        return KConfiguration.getInstance().getConfiguration().getBoolean("cdk.ingest.fakemode", false);
+    }
+
+    protected int getFakeModeUIIDLimit() {
+        return KConfiguration.getInstance().getConfiguration().getInt("cdk.ingest.fakemode.limit", 100);
+    }
+
+
 
     protected String getStatus(String uuid) throws Exception {
         Client c = Client.create();
@@ -284,6 +294,11 @@ public class CDKImportProcess {
                 processed++;
             }
             commit();
+
+            if (getFakeMode() && getFakeModeUIIDLimit() == processed) {
+                logger.info("limit is reached :"+processed);
+                break;
+            }
         }
         commit();
         logger.log(Level.INFO, "{0} processed", processed);
@@ -367,13 +382,54 @@ public class CDKImportProcess {
                 logger.log(Level.SEVERE, e.getMessage(),e);
             }
         }
-        rawIngest(pid, processingStream);
+
+        if (getFakeMode()) {
+            fakeFoxml(pid, processingStream);
+        } else {
+            rawIngest(pid, processingStream);
+        }
     }
 
-	protected void rawIngest(String pid, InputStream processingStream) throws IOException {
+    protected void fakeXMLS(InputStream is, String subfolder, String pid) throws IOException {
+        File folder = new File(xslsFolder(), subfolder);
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+
+        File f = new File(folder, pid.replace(":","_"));
+        if (!f.exists()) {
+            f.createNewFile();
+        }
+        IOUtils.saveToFile(is, f);
+    }
+
+
+    protected void fakeFoxml(String pid, InputStream is) throws IOException {
+        fakeXMLS(is, "foxml", pid);
+    }
+
+    protected void fakeIndex(String pid, InputStream is) throws IOException {
+        fakeXMLS(is, "solrxml", pid);
+    }
+
+
+    protected boolean pidExists( String pid ) throws IOException {
+        try {
+            FedoraAccessImpl fa = new FedoraAccessImpl(KConfiguration.getInstance(), null);
+            Document relsExt = fa.getRelsExt(pid);
+            return true;
+        } catch (IOException e) {
+            logger.log(Level.SEVERE,e.getMessage(),e);
+            return false;
+        }
+    }
+
+
+    protected void rawIngest(String pid, InputStream processingStream) throws IOException {
 		// must merge; last parameter must be false
         Import.ingest(processingStream, pid, null, null, false);
-	}
+    }
+
 
     private void index(String pid) throws Exception {
     	if (pid.contains("@")) {
@@ -405,7 +461,11 @@ public class CDKImportProcess {
 				
 				StringWriter sw = (StringWriter) destStream.getWriter();
 				//logger.info(sw.toString());
-				postData(new StringReader(sw.toString()), new StringBuilder());
+                if (getFakeMode()) {
+                    fakeIndex(pid, new ByteArrayInputStream(sw.toString().getBytes(Charset.forName("UTF-8"))));
+                } else {
+                    postData(new StringReader(sw.toString()), new StringBuilder());
+                }
 			} catch (UniformInterfaceException e) {
 				logger.info("cannot index document");
 			}

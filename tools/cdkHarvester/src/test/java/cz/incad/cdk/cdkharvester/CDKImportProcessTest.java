@@ -10,16 +10,15 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.zip.ZipInputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.apache.commons.collections.map.HashedMap;
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 import org.json.JSONObject;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -82,17 +81,29 @@ public class CDKImportProcessTest extends TestCase {
 				.addMockedMethod("findDocFromCurrentIndex")
 				.addMockedMethod("getCollectionPid")
 				.addMockedMethod("getSolrSelectEndpoint")
-				
+
+				.addMockedMethod("pidExists")
+
 				.createMock();
 
-		
+
+		EasyMock.expect(p.pidExists(EasyMock.isA(String.class))).andAnswer(new IAnswer<Boolean>() {
+			Map<String, Integer> memory = new HashedMap();
+			@Override
+			public Boolean answer() throws Throwable {
+				return null;
+			}
+		});
+
+
 		EasyMock.expect(p.getPidsRetriever("1900-01-01T00:00:00.002Z")).andReturn(retriever).anyTimes();
 		p.rawIngest(EasyMock.<String>isA(String.class),EasyMock.<InputStream>isA(InputStream.class));
 		EasyMock.expectLastCall().andDelegateTo(cdkProcessDelegator()).anyTimes();
 
 		p.postData(EasyMock.<Reader>isA(Reader.class),EasyMock.<StringBuilder>isA(StringBuilder.class));
 		EasyMock.expectLastCall().andDelegateTo(cdkProcessDelegator()).anyTimes();
-		
+
+
 		emptySolrResult(p);
 		solrxmlExpections(p,"http://localhost:8080/search","vc:test_collection");
 		foxmlExpections(p, "http://localhost:8080/search","vc:test_collection");
