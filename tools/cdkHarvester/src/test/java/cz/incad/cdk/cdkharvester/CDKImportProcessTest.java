@@ -90,10 +90,15 @@ public class CDKImportProcessTest extends TestCase {
 				.addMockedMethod("findDocFromCurrentIndex")
 				.addMockedMethod("getCollectionPid")
 				.addMockedMethod("getSolrSelectEndpoint")
-				
+
+				.addMockedMethod("getProcessingChain")
+
+				.addMockedMethod("getIngestWait")
+				.addMockedMethod("getIngestWaitMilliseconds")
+
 				.createMock();
 
-		
+
 		ProcessingTimestampsSolrStoreImpl processingTimestamps = EasyMock.createMockBuilder(ProcessingTimestampsSolrStoreImpl.class)
 				.withConstructor()
 				.addMockedMethod("getTimestamp")
@@ -121,7 +126,11 @@ public class CDKImportProcessTest extends TestCase {
 		solrxmlExpections(p,"http://localhost:8080/search","vc:test_collection");
 		foxmlExpections(p, "http://localhost:8080/search","vc:test_collection");
 		
-		
+
+		EasyMock.expect(p.getIngestWait()).andReturn(true).anyTimes();
+		EasyMock.expect(p.getIngestWaitMilliseconds()).andReturn(40L).anyTimes();
+		EasyMock.expect(p.getProcessingChain()).andReturn(new ArrayList<>()).anyTimes();
+
 		// return collection
 		EasyMock.expect(p.getCollectionPid()).andReturn("vc:test_collection").anyTimes();
 		// return select endpoint

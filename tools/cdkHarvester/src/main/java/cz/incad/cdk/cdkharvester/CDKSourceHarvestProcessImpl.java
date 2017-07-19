@@ -47,6 +47,11 @@ public class CDKSourceHarvestProcessImpl extends AbstractCDKSourceHarvestProcess
 	public static String API_VERSION = "v4.6";
 	public static int ROWS = 500;
 
+	@Override
+	public List<ProcessFOXML> getProcessingChain() {
+		return super.getProcessingChain();
+	}
+
 	/**
 	 * @throws IOException
 	 * 

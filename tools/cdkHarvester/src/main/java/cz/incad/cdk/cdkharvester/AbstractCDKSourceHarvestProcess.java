@@ -82,6 +82,8 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 		this.processingChain.add(new ImageReplaceProcess());
 	}
 
+
+
 	protected WebResource client(String url) {
 		Client c = Client.create();
 		c.setConnectTimeout(2000);
@@ -89,6 +91,11 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 		WebResource r = c.resource(url);
 		r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
 		return r;
+	}
+
+
+	public List<ProcessFOXML> getProcessingChain() {
+		return processingChain;
 	}
 
 	public void postToIndex(String xmlcont) throws CDKReplicationException {
@@ -112,6 +119,14 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 	protected String getSolrSelectEndpoint() {
 		String solrUrlString = KConfiguration.getInstance().getConfiguration().getString("solrHost") + "/select";
 		return solrUrlString;
+	}
+
+	protected boolean getIngestWait() {
+		return KConfiguration.getInstance().getConfiguration().getBoolean("ingest.wait.flag", false);
+	}
+
+	protected long getIngestWaitMilliseconds() {
+		return KConfiguration.getInstance().getConfiguration().getLong("ingest.wait.millis", 2000);
 	}
 
 	public void replicate(String pid, String timeStamp, CDKState updatingState) throws CDKReplicationException {
@@ -232,6 +247,7 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 	}
 
 	public void ingest(InputStream foxml, String pid) throws CDKReplicationException {
+
 		try {
 			if (foxml == null) {
 				LOGGER.info("No inputstream for foxml");
@@ -242,11 +258,19 @@ public abstract class AbstractCDKSourceHarvestProcess implements CDKSourceHarves
 			IOUtils.copyStreams(foxml, bos);
 
 			InputStream processingStream = new ByteArrayInputStream(bos.toByteArray());
-			for (int i = 0, ll = this.processingChain.size(); i < ll; i++) {
-				ProcessFOXML unit = processingChain.get(i);
+			for (int i = 0, ll = getProcessingChain().size(); i < ll; i++) {
+				ProcessFOXML unit = getProcessingChain().get(i);
 				processingStream = new ByteArrayInputStream(unit.process(this.k4Url, pid, processingStream));
 			}
 
+			if (getIngestWait()) {
+				try {
+					long millis = getIngestWaitMilliseconds();
+					Thread.sleep(millis);
+				} catch (InterruptedException e) {
+					LOGGER.log(Level.SEVERE, e.getMessage(),e);
+				}
+			}
 			rawIngest(pid, processingStream);
 		} catch (IOException e) {
 			throw new CDKReplicationException(e);
