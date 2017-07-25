@@ -10,12 +10,15 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.rmi.RemoteException;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.zip.ZipInputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import cz.incad.cdk.cdkharvester.utils.FilesUtils;
 import org.apache.commons.collections.map.HashedMap;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
@@ -76,8 +79,13 @@ public class CDKImportProcessTest extends TestCase {
 		        .withConstructor(Arrays.asList(imgProcess))
 				.addMockedMethod("foxml")
 				.addMockedMethod("solrxml")
-				.addMockedMethod("rawIngest")
-				.addMockedMethod("postData")
+
+				.addMockedMethod("processFoxmlBatch")
+				.addMockedMethod("processSolrXmlBatch")
+
+				.addMockedMethod("commit")
+
+				//.addMockedMethod("postData")
 				.addMockedMethod("findDocFromCurrentIndex")
 				.addMockedMethod("getCollectionPid")
 				.addMockedMethod("getSolrSelectEndpoint")
@@ -97,11 +105,16 @@ public class CDKImportProcessTest extends TestCase {
 
 
 		EasyMock.expect(p.getPidsRetriever("1900-01-01T00:00:00.002Z")).andReturn(retriever).anyTimes();
-		p.rawIngest(EasyMock.<String>isA(String.class),EasyMock.<InputStream>isA(InputStream.class));
-		EasyMock.expectLastCall().andDelegateTo(cdkProcessDelegator()).anyTimes();
 
-		p.postData(EasyMock.<Reader>isA(Reader.class),EasyMock.<StringBuilder>isA(StringBuilder.class));
-		EasyMock.expectLastCall().andDelegateTo(cdkProcessDelegator()).anyTimes();
+		p.processFoxmlBatch();
+		EasyMock.expectLastCall().andDelegateTo(cdkProcessDelegator("knav")).anyTimes();
+
+		p.processSolrXmlBatch();
+		EasyMock.expectLastCall().andDelegateTo(cdkProcessDelegator("knav")).anyTimes();
+
+		p.commit();
+		EasyMock.expectLastCall().andDelegateTo(cdkProcessDelegator("knav")).times(3);
+
 
 
 		emptySolrResult(p);
@@ -117,7 +130,7 @@ public class CDKImportProcessTest extends TestCase {
 		
 		EasyMock.replay(retriever, p, imgProcess);
 
-		p.initVariables("http://localhost:8080/search", "name", "vc:test_collection", "krameriusAdmin",
+		p.initVariables("http://localhost:8080/search", "knav", "vc:test_collection", "krameriusAdmin",
 				"krameriusAdmin");
 		p.initTransformations();
 		// set for test variable
@@ -127,64 +140,39 @@ public class CDKImportProcessTest extends TestCase {
 	}
 
 	// delegated and processed 
-	private CDKImportProcess cdkProcessDelegator() throws IOException {
+	private CDKImportProcess cdkProcessDelegator(final String sourceName) throws IOException {
 		CDKImportProcess delegator = new CDKImportProcess() {
-			@Override
-			protected void rawIngest(String pid, InputStream processingStream) throws IOException {
-				try {
-					Document parseDocument = XMLUtils.parseDocument(processingStream,true);
-					List<Element> elements = XMLUtils.getElements(parseDocument.getDocumentElement(),new XMLUtils.ElementsFilter() {
-						@Override
-						public boolean acceptElement(Element element) {
-							String localName = element.getLocalName();
-							String streamName = element.getAttribute("ID");
-							if (localName.equals("datastream") && streamName.equals("RELS-EXT")) {
-								Element foundElement = XMLUtils.findElement(element, new XMLUtils.ElementsFilter() {
-									@Override
-									public boolean acceptElement(Element element) {
-										String localName = element.getLocalName();
-										return localName.equals("hasModel");
-									}
-								});
-								if (foundElement != null) {
-									Attr attrNs = foundElement.getAttributeNodeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "resource");
-									if (attrNs !=  null) {
-										String val = attrNs.getValue();
-										return val != null && val.trim().equals("info:fedora/model:page");
-									}
-								}
-							}
-							return false;
-						}
-					});
-					if (!elements.isEmpty()) {
-						final List<String> streamNames = new ArrayList<String>();
-						XMLUtils.getElements(parseDocument.getDocumentElement(),new XMLUtils.ElementsFilter() {
-							@Override
-							public boolean acceptElement(Element element) {
-								String localName = element.getLocalName();
-								String streamName = element.getAttribute("ID");
-								if (localName.equals("datastream")) {
-									streamNames.add(streamName);
-								}
-								return false;
-							}
-						});
 
-						Assert.assertTrue(streamNames.contains("IMG_FULL"));
-						Assert.assertTrue(streamNames.contains("IMG_THUMB"));
-					}
-					
-				} catch (ParserConfigurationException e) {
-					Assert.fail(e.getMessage());
-				} catch (SAXException e) {
-					Assert.fail(e.getMessage());
-				}
+			public final int NUMBER_OF_DOC = 1184;
+
+			public  final Logger LOGGER = Logger.getLogger(CDKImportProcess.class.getName());
+
+			private int iteration = 0;
+			@Override
+			protected void processFoxmlBatch() throws IOException {
+				File batchFolders = FilesUtils.batchFolders(sourceName);
+				File subFolder = new File(batchFolders, FilesUtils.FOXML_FILES);
+				Assert.assertNotNull(subFolder.listFiles());
+				Assert.assertTrue(subFolder.listFiles().length > 0);
+				FilesUtils.deleteFolder(subFolder);
+
+				iteration++;
 			}
 
-			// post to index
 			@Override
-			protected void postData(Reader data, StringBuilder output) throws Exception {
+			protected void processSolrXmlBatch() throws IOException {
+				File batchFolders = FilesUtils.batchFolders(sourceName);
+				File subFolder = new File(batchFolders, FilesUtils.SOLRXML_FILES);
+				Assert.assertNotNull(subFolder.listFiles());
+				Assert.assertTrue(subFolder.listFiles().length > 0);
+				FilesUtils.deleteFolder(subFolder);
+				iteration++;
+			}
+
+			@Override
+			protected void commit() throws RemoteException, Exception {
+				System.out.println("Commit");
+				iteration++;
 			}
 		};
 		return delegator;

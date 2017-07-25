@@ -24,14 +24,20 @@ import cz.incad.cdk.cdkharvester.changeindex.AddField;
 import cz.incad.cdk.cdkharvester.changeindex.ChangeField;
 import cz.incad.cdk.cdkharvester.changeindex.PrivateConnectUtils;
 import cz.incad.cdk.cdkharvester.changeindex.ResultsUtils;
+import cz.incad.cdk.cdkharvester.commands.SupportedCommands;
 import cz.incad.cdk.cdkharvester.process.ImageReplaceProcess;
 import cz.incad.cdk.cdkharvester.process.ProcessFOXML;
-import cz.incad.kramerius.Constants;
+import cz.incad.cdk.cdkharvester.utils.FilesUtils;
 import cz.incad.kramerius.impl.FedoraAccessImpl;
 import cz.incad.kramerius.processes.States;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.logging.Level;
 
 import cz.incad.kramerius.processes.annotations.ParameterName;
@@ -103,6 +109,8 @@ public class CDKImportProcess {
     private String pswd;
     private Transformer transformer;
     protected Configuration config;
+
+    protected File batchFolders;
     
     // Modified by PS - foxml manip
     private List<ProcessFOXML> processingChain = new ArrayList<ProcessFOXML>();
@@ -133,23 +141,10 @@ public class CDKImportProcess {
         p.start(url, name, collectionPid, userName, pswd);
     }
 
-    protected boolean getIngestWait() {
-        return KConfiguration.getInstance().getConfiguration().getBoolean("cdk.ingest.wait.flag", false);
+
+    protected int getBatchModeSize() {
+        return KConfiguration.getInstance().getConfiguration().getInteger("cdk.prepareFOXML.batch.size", 400);
     }
-
-
-    protected long getIngestWaitMilliseconds() {
-        return KConfiguration.getInstance().getConfiguration().getLong("cdk.ingest.wait.millis", 2000);
-    }
-
-    protected boolean getFakeMode() {
-        return KConfiguration.getInstance().getConfiguration().getBoolean("cdk.ingest.fakemode", false);
-    }
-
-    protected int getFakeModeUIIDLimit() {
-        return KConfiguration.getInstance().getConfiguration().getInt("cdk.ingest.fakemode.limit", 100);
-    }
-
 
 
     protected String getStatus(String uuid) throws Exception {
@@ -196,27 +191,7 @@ public class CDKImportProcess {
         return from;
     }
 
-    protected String updateFile(String name) {
-        return xslsFolder().getAbsolutePath() + File.separator + name + ".time";
-    }
 
-    protected String uuidFile(String name) {
-        return xslsFolder().getAbsolutePath() + File.separator + name + ".uuid";
-    }
-
-    protected File xslsFolder() {
-        String dirName = Constants.WORKING_DIR + File.separator + "cdk";
-        File dir = new File(dirName);
-        if (!dir.exists()) {
-            boolean mkdirs = dir.mkdirs();
-            if (!mkdirs) {
-                throw new RuntimeException("cannot create dir '" + dir.getAbsolutePath() + "'");
-            }
-        }
-        return dir;
-    }
-
-    
     public String getCollectionPid() {
 		return collectionPid;
 	}
@@ -230,20 +205,21 @@ public class CDKImportProcess {
 
         config = KConfiguration.getInstance().getConfiguration();
 
-        this.uuidFile = uuidFile(name);
+        this.uuidFile = FilesUtils.uuidFile(name);
+        this.batchFolders = FilesUtils.batchFolders(name);
         String uuid = getLastUuid();
         String actualUUID = System.getProperty(ProcessStarter.UUID_KEY);
 
         if (uuid != null && !uuid.equals("") && !States.notRunningState(States.valueOf(getStatus(uuid)))) {
             logger.log(Level.INFO, "Process yet active. Finish.");
-            File f = new File(xslsFolder().getAbsolutePath() + File.separator + "uuids" + File.separator + actualUUID);
+            File f = new File(FilesUtils.xslsFolder().getAbsolutePath() + File.separator + "uuids" + File.separator + actualUUID);
             f.createNewFile();
             return;
         }
         writeUuid(actualUUID);
-        this.updateTimeFile = updateFile(name);
+        this.updateTimeFile = FilesUtils.updateFile(name);
         String from = getLastUpdateTime();
-        logger.log(Level.INFO, "Last index time: {0}", from);
+        logger.log(Level.INFO, "Last prepareIndex time: {0}", from);
 
         // init variables
         initVariables(url, name, collectionPid, userName, pswd);
@@ -293,20 +269,28 @@ public class CDKImportProcess {
                 writeUpdateTime(entry.getValue());
                 processed++;
             }
-            commit();
-
-            if (getFakeMode() && getFakeModeUIIDLimit() == processed) {
-                logger.info("limit is reached :"+processed);
-                break;
+            if (processed % this.getBatchModeSize() == 0) {
+                // import all from batch
+                processBatches();
             }
         }
-        commit();
+
+        processBatches();
         logger.log(Level.INFO, "{0} processed", processed);
     }
 
-	protected PidsRetriever getPidsRetriever(String date) throws ParseException {
+    private void processBatches() throws Exception {
+        processFoxmlBatch();
+        processSolrXmlBatch();
+        commit();
+        FilesUtils.deleteFolder(new File(batchFolders, FilesUtils.FOXML_FILES));
+        FilesUtils.deleteFolder(new File(batchFolders, FilesUtils.SOLRXML_FILES));
+    }
+
+    protected PidsRetriever getPidsRetriever(String date) throws ParseException {
 		return new PidsRetriever(date, k4Url, userName, pswd);
 	}
+
 
     protected void replicate(String pid) throws Exception {
     	String url = k4Url + "/api/" + API_VERSION + "/cdk/" + pid + "/foxml?collection=" + collectionPid;
@@ -316,8 +300,8 @@ public class CDKImportProcess {
         if (!parser.isPagePid()) {
         	if (!Utils.getSkipList().contains(pid)) {
             	InputStream t = foxml(pid, url);
-                ingest(t, pid);
-                index(pid);
+                prepareFOXML(t, pid);
+                prepareIndex(pid);
         	} else {
             	logger.log(Level.INFO,"skipping pid {0} because of configuration",pid); 
         	}
@@ -358,7 +342,7 @@ public class CDKImportProcess {
 		return r;
 	}
 
-    private void ingest(InputStream foxml, String pid) throws Exception {
+    private void prepareFOXML(InputStream foxml, String pid) throws Exception {
     	if(foxml == null) {
     		logger.info("No inputstream for foxml");
 			return;
@@ -372,46 +356,33 @@ public class CDKImportProcess {
             ProcessFOXML unit = processingChain.get(i);
             processingStream = new ByteArrayInputStream(unit.process(this.k4Url, pid, processingStream));
         }
-
-        if (getIngestWait()) {
-            try {
-                long millis = getIngestWaitMilliseconds();
-                logger.info("waiting for "+millis+" ms");
-                Thread.sleep(millis);
-            } catch (InterruptedException e) {
-                logger.log(Level.SEVERE, e.getMessage(),e);
-            }
-        }
-
-        if (getFakeMode()) {
-            fakeFoxml(pid, processingStream);
-        } else {
-            rawIngest(pid, processingStream);
-        }
-    }
-
-    protected void fakeXMLS(InputStream is, String subfolder, String pid) throws IOException {
-        File folder = new File(xslsFolder(), subfolder);
-        if (!folder.exists()) {
-            folder.mkdirs();
-        }
-
-        File f = new File(folder, pid.replace(":","_"));
-        if (!f.exists()) {
-            f.createNewFile();
-        }
-        IOUtils.saveToFile(is, f);
+        storeFOXMLToDisk(pid, processingStream);
     }
 
 
-    protected void fakeFoxml(String pid, InputStream is) throws IOException {
-        fakeXMLS(is, "foxml", pid);
+
+    protected void storeFOXMLToDisk(String pid, InputStream is) throws IOException {
+        logger.info("storing foxml to disk; preparing the batch");
+
+        FilesUtils.dumpXMLS(this.sourceName,FilesUtils.FOXML_FILES, is, pid);
     }
 
-    protected void fakeIndex(String pid, InputStream is) throws IOException {
-        fakeXMLS(is, "solrxml", pid);
+    protected void storeSOLRXMLToDisk(String pid, InputStream is) throws IOException {
+        logger.info("storing solrxml to disk; preparing the batch");
+        FilesUtils.dumpXMLS(this.sourceName, FilesUtils.SOLRXML_FILES, is, pid);
     }
 
+    protected void processFoxmlBatch() throws IOException {
+        File batchFolders = FilesUtils.batchFolders(this.sourceName);
+        File subFolder = new File(batchFolders, FilesUtils.FOXML_FILES);
+        SupportedCommands.FEDORA.doCommand(new String[] {subFolder.getAbsolutePath()});
+    }
+
+    protected void processSolrXmlBatch() throws IOException {
+        File batchFolders = FilesUtils.batchFolders(this.sourceName);
+        File subFolder = new File(batchFolders, FilesUtils.SOLRXML_FILES);
+        SupportedCommands.SOLR.doCommand(new String[] {subFolder.getAbsolutePath()});
+    }
 
     protected boolean pidExists( String pid ) throws IOException {
         try {
@@ -425,15 +396,10 @@ public class CDKImportProcess {
     }
 
 
-    protected void rawIngest(String pid, InputStream processingStream) throws IOException {
-		// must merge; last parameter must be false
-        Import.ingest(processingStream, pid, null, null, false);
-    }
 
-
-    private void index(String pid) throws Exception {
+    private void prepareIndex(String pid) throws Exception {
     	if (pid.contains("@")) {
-			logger.info("Page pid; cannot index");
+			logger.info("Page pid; cannot prepareIndex");
 			return;
     	}
     	org.json.JSONObject results = findDocFromCurrentIndex(pid);
@@ -460,14 +426,12 @@ public class CDKImportProcess {
 				transformer.transform(new StreamSource(t), destStream);
 				
 				StringWriter sw = (StringWriter) destStream.getWriter();
+
 				//logger.info(sw.toString());
-                if (getFakeMode()) {
-                    fakeIndex(pid, new ByteArrayInputStream(sw.toString().getBytes(Charset.forName("UTF-8"))));
-                } else {
-                    postData(new StringReader(sw.toString()), new StringBuilder());
-                }
+                storeSOLRXMLToDisk(pid, new ByteArrayInputStream(sw.toString().getBytes(Charset.forName("UTF-8"))));
+
 			} catch (UniformInterfaceException e) {
-				logger.info("cannot index document");
+				logger.info("cannot prepareIndex document");
 			}
     	}
     }
@@ -601,6 +565,9 @@ public class CDKImportProcess {
         logger.log(Level.FINE, "commit");
 
         postData(new StringReader(s), new StringBuilder());
+    }
+
+    protected void closeBatch() {
 
     }
 
