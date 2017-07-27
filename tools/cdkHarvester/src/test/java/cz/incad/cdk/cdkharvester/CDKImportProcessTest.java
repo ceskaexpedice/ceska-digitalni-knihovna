@@ -18,6 +18,8 @@ import java.util.zip.ZipInputStream;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import cz.incad.cdk.cdkharvester.commands.Command;
+import cz.incad.cdk.cdkharvester.commands.SupportedCommands;
 import cz.incad.cdk.cdkharvester.utils.FilesUtils;
 import org.apache.commons.collections.map.HashedMap;
 import org.easymock.EasyMock;
@@ -148,8 +150,9 @@ public class CDKImportProcessTest extends TestCase {
 			public  final Logger LOGGER = Logger.getLogger(CDKImportProcess.class.getName());
 
 			private int iteration = 0;
+
 			@Override
-			protected void processFoxmlBatch() throws IOException {
+			protected void processFoxmlBatch() throws IOException, InterruptedException {
 				File batchFolders = FilesUtils.batchFolders(sourceName);
 				File subFolder = new File(batchFolders, FilesUtils.FOXML_FILES);
 				Assert.assertNotNull(subFolder.listFiles());
@@ -158,6 +161,7 @@ public class CDKImportProcessTest extends TestCase {
 
 				iteration++;
 			}
+
 
 			@Override
 			protected void processSolrXmlBatch() throws IOException {
@@ -171,7 +175,7 @@ public class CDKImportProcessTest extends TestCase {
 
 			@Override
 			protected void commit() throws RemoteException, Exception {
-				System.out.println("Commit");
+				//System.out.println("Commit");
 				iteration++;
 			}
 		};

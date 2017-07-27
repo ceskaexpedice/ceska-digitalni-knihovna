@@ -28,7 +28,14 @@ public class ZipIteration  {
 			return name.substring("foxml/".length(),name.length()-".foxml".length()).replace('_', ':');
 		}
 	}
-	
+
+	protected static class CommandFOXMLPID implements PidDisect {
+		@Override
+		public String disect(String name) {
+			return name.substring("foxml/".length()).replace('_', ':');
+		}
+	}
+
 	protected static class SOLRXMLPID implements PidDisect {
 
 		@Override
@@ -46,6 +53,12 @@ public class ZipIteration  {
 	public void iterateFOXML(ZipIterationCall call) throws IOException {
 		InputStream resourceAsStream = ZipIteration.class.getResourceAsStream("foxml.zip");
 		iterate(call, resourceAsStream, new FOXMLPID());
+	}
+
+
+	public void iterate_command_ingest_FOXML(ZipIterationCall call) throws IOException {
+		InputStream resourceAsStream = ZipIteration.class.getResourceAsStream("foxml_command_ingest.zip");
+		iterate(call, resourceAsStream, new CommandFOXMLPID());
 	}
 
 	private void iterate(ZipIterationCall call, InputStream resourceAsStream,PidDisect disect ) throws IOException {

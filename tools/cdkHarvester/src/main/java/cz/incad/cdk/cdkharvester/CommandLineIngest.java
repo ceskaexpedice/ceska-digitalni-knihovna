@@ -9,7 +9,7 @@ import java.io.IOException;
 public class CommandLineIngest {
 
     public static void help() {
-        System.out.println("cmdline <FEDORA|SOLR> <folder>");
+        System.out.println("cmdline <FEDORA|SOLR|FEDORA_ONE_FILE|SOLR_ONE_FILE|FEDORA_THRESHOLD > <folder|file> <confproperties>");
     }
     public static void main(String[] args) throws IOException {
         if (args.length < 2) {

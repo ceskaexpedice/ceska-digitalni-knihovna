@@ -1,19 +1,27 @@
 package cz.incad.cdk.cdkharvester.commands;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public enum SupportedCommands {
 
-    FEDORA(new IngestFedoraCommand()),
-    SOLR(new IngestSolrCommand());
+    FEDORA(new IngestFedoraFolderCommand()),
+    FEDORA_THRESHOLD(new IngestFedoraFolderFailoverCommand()),
+    FEDORA_ONE_FILE(new IngestFedoraFileCommand()),
 
-    public void doCommand(String[] args) throws IOException {
+    SOLR(new IngestSolrFolderCommand());
+
+
+    public void doCommand(String[] args) throws IngestIOException {
         this.command.doCommand(args);
     }
 
+
     SupportedCommands(Command command) {
         this.command = command;
+    }
+
+    public Command getCommand() {
+        return command;
     }
 
     public static SupportedCommands find(String name) {

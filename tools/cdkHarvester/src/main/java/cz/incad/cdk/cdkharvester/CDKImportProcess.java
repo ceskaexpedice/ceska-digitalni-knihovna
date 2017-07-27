@@ -24,6 +24,8 @@ import cz.incad.cdk.cdkharvester.changeindex.AddField;
 import cz.incad.cdk.cdkharvester.changeindex.ChangeField;
 import cz.incad.cdk.cdkharvester.changeindex.PrivateConnectUtils;
 import cz.incad.cdk.cdkharvester.changeindex.ResultsUtils;
+import cz.incad.cdk.cdkharvester.commands.Command;
+import cz.incad.cdk.cdkharvester.commands.IngestIOException;
 import cz.incad.cdk.cdkharvester.commands.SupportedCommands;
 import cz.incad.cdk.cdkharvester.process.ImageReplaceProcess;
 import cz.incad.cdk.cdkharvester.process.ProcessFOXML;
@@ -37,7 +39,7 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Comparator;
+import java.util.*;
 import java.util.logging.Level;
 
 import cz.incad.kramerius.processes.annotations.ParameterName;
@@ -69,9 +71,6 @@ import java.net.ProtocolException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import javax.ws.rs.core.MediaType;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -81,6 +80,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import net.sf.json.JSONObject;
 import org.apache.commons.configuration.Configuration;
+import org.fedora.api.Ingest;
 import org.kramerius.Import;
 import org.kramerius.replications.*;
 import org.w3c.dom.Document;
@@ -142,8 +142,30 @@ public class CDKImportProcess {
     }
 
 
+    /** Batch mode properties */
     protected int getBatchModeSize() {
         return KConfiguration.getInstance().getConfiguration().getInteger("cdk.prepareFOXML.batch.size", 400);
+    }
+
+
+    /** threshold properties */
+    protected boolean getThresholdMode() {
+        return KConfiguration.getInstance().getConfiguration().getBoolean("cdk.prepareFOXML.batch.threshold.enabled", true);
+    }
+
+    protected int getThresholdIteration() {
+        return KConfiguration.getInstance().getConfiguration().getInt("cdk.prepareFOXML.batch.threshold.iterations", 5);
+    }
+
+    protected boolean getThresholdWithDelay() {
+        return KConfiguration.getInstance().getConfiguration().getBoolean("cdk.prepareFOXML.batch.threshold_with_delay.enabled", false);
+    }
+    protected int getThresholdWithDelayIteration() {
+        return KConfiguration.getInstance().getConfiguration().getInt("cdk.prepareFOXML.batch.threshold_with_delay.iterations", 5);
+    }
+
+    protected int getThresholdWithDelayNumber() {
+        return KConfiguration.getInstance().getConfiguration().getInt("cdk.prepareFOXML.batch.threshold_with_delay.delaytime", 100);
     }
 
 
@@ -210,6 +232,8 @@ public class CDKImportProcess {
         String uuid = getLastUuid();
         String actualUUID = System.getProperty(ProcessStarter.UUID_KEY);
 
+
+        logger.log(Level.INFO, "Trying to get information about previous process '"+uuid+"'");
         if (uuid != null && !uuid.equals("") && !States.notRunningState(States.valueOf(getStatus(uuid)))) {
             logger.log(Level.INFO, "Process yet active. Finish.");
             File f = new File(FilesUtils.xslsFolder().getAbsolutePath() + File.separator + "uuids" + File.separator + actualUUID);
@@ -372,11 +396,26 @@ public class CDKImportProcess {
         FilesUtils.dumpXMLS(this.sourceName, FilesUtils.SOLRXML_FILES, is, pid);
     }
 
-    protected void processFoxmlBatch() throws IOException {
+
+    protected void processFoxmlBatch() throws IOException, InterruptedException {
         File batchFolders = FilesUtils.batchFolders(this.sourceName);
         File subFolder = new File(batchFolders, FilesUtils.FOXML_FILES);
-        SupportedCommands.FEDORA.doCommand(new String[] {subFolder.getAbsolutePath()});
+
+        if (getThresholdMode()) {
+            List<String> params = new ArrayList<>();
+            params.add(subFolder.getAbsolutePath());
+            params.add(""+getThresholdIteration());
+            if (getThresholdWithDelay()) {
+                params.add(""+getThresholdWithDelayIteration());
+            }
+            SupportedCommands.FEDORA_THRESHOLD.doCommand(params.toArray(new String[params.size()]));
+        } else {
+            SupportedCommands.FEDORA.doCommand(new String[] {subFolder.getAbsolutePath()});
+        }
     }
+
+
+
 
     protected void processSolrXmlBatch() throws IOException {
         File batchFolders = FilesUtils.batchFolders(this.sourceName);

@@ -8,11 +8,6 @@ import java.io.IOException;
  */
 public interface Command {
 
-    public void doCommand(String[] args) throws IOException;
+    public void doCommand(String[] args) throws IngestIOException;
 
-    public void startSlaveMode() throws IOException;
-
-    public void doCommandInSlaveMode(String oneArg) throws IOException;
-
-    public void endSlaveMode() throws IOException;
 }

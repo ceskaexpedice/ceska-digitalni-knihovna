@@ -2,7 +2,6 @@ package cz.incad.cdk.cdkharvester.commands;
 
 import cz.incad.kramerius.utils.IOUtils;
 import cz.incad.kramerius.utils.conf.KConfiguration;
-import org.kramerius.Import;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -16,59 +15,32 @@ import java.util.logging.Logger;
 /**
  * Created by pstastny on 7/20/2017.
  */
-public class IngestSolrCommand implements  Command{
+public class IngestSolrFolderCommand implements  Command{
 
-    public static Logger LOGGER = Logger.getLogger(IngestSolrCommand.class.getName());
+    public static Logger LOGGER = Logger.getLogger(IngestSolrFolderCommand.class.getName());
 
     @Override
-    public void doCommand(String[] args) throws IOException {
+    public void doCommand(String[] args) throws IngestIOException {
         File folder = new File(args[0]);
         File[] files = folder.listFiles();
-        for (File f : files) {
-            LOGGER.info("ingesting "+f.getAbsolutePath());
-            // must merge; last parameter must be false
-            InputStream is = new FileInputStream(f);
-            String s = IOUtils.readAsString(is, Charset.forName("UTF-8"), true);
-            try {
-                postData(new StringReader(s.toString()), new StringBuilder());
-            } catch (Exception e) {
-                throw new IOException(e);
+        if (files != null) {
+            for (File f : files) {
+                LOGGER.info("ingesting "+f.getAbsolutePath());
+                // must merge; last parameter must be false
+                try {
+                    InputStream is = new FileInputStream(f);
+                    String s = IOUtils.readAsString(is, Charset.forName("UTF-8"), true);
+                    postData(new StringReader(s.toString()), new StringBuilder());
+                } catch (Exception e) {
+                    throw new IngestIOException(f.getName().replace("_",":"), f, e);
+                }
             }
-        }
-
-    }
-
-    @Override
-    public void startSlaveMode() throws IOException {
-        try {
-            this.commit();
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
-
-    }
-
-    @Override
-    public void doCommandInSlaveMode(String oneArg) throws IOException {
-        File f = new File(oneArg);
-        InputStream is = new FileInputStream(f);
-        String s = IOUtils.readAsString(is, Charset.forName("UTF-8"), true);
-        try {
-            postData(new StringReader(s.toString()), new StringBuilder());
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
-
-    }
-
-    @Override
-    public void endSlaveMode() throws IOException {
-        try {
-            this.commit();
-        } catch (Exception e) {
-            throw new IOException(e);
+        } else {
+            LOGGER.info("no files in fodler; skipping" );
         }
     }
+
+
 
     protected String getSolrUpdateEndpoint() {
         String solrUrlString = KConfiguration.getInstance().getConfiguration().getString("solrHost") + "/update";
