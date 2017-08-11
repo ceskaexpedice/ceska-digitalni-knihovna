@@ -37,8 +37,8 @@ public class FailingIngestFedoraCommandFourDelayIterationsTest2 extends  Abstrac
         if (_delegatorInstance ==  null) {
             _delegatorInstance = new IngestFedoraFolderFailoverCommand() {
 
-                Map<String, Integer> standard = new HashMap<>();
-                Map<String, Integer> delayed = new HashMap<>();
+                Map<String, Integer> standard = new HashMap<String, Integer>();
+                Map<String, Integer> delayed = new HashMap<String, Integer>();
                 int counter = 0;
 
                 @Override

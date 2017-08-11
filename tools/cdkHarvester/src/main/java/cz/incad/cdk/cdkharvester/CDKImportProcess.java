@@ -35,10 +35,6 @@ import cz.incad.kramerius.processes.States;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.FileVisitOption;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -402,7 +398,7 @@ public class CDKImportProcess {
         File subFolder = new File(batchFolders, FilesUtils.FOXML_FILES);
 
         if (getThresholdMode()) {
-            List<String> params = new ArrayList<>();
+            List<String> params = new ArrayList<String>();
             params.add(subFolder.getAbsolutePath());
             params.add(""+getThresholdIteration());
             if (getThresholdWithDelay()) {

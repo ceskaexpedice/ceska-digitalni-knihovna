@@ -72,4 +72,11 @@ public class FilesUtils {
         }
         subfolder.delete();
     }
+
+    public static File createTempDirectory(String test) {
+        File f = new File(System.getProperty("java.io.tmpdir"));
+        String name = test+"_"+System.currentTimeMillis();
+        File folder = new File(f, name);
+        return folder;
+    }
 }

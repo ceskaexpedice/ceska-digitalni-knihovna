@@ -2,6 +2,8 @@ apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'eclipse'
 
+apply plugin: 'application'
+
  repositories {
 		 	/*
             flatDir {
@@ -88,6 +90,18 @@ dependencies {
    compile group: 'cz.incad.kramerius', name: 'import-cmdtool', version: '5.+'
    testCompile "org.easymock:easymock:3.0"
    testCompile "junit:junit:3.8.1"
+}
+
+
+mainClassName = "cz.incad.cdk.cdkharvester.CommandLineIngest"
+
+
+tasks.withType(CreateStartScripts).each { task ->
+    task.doLast {
+        String text = task.windowsScript.text
+        text = text.replaceFirst(/(set CLASSPATH=%APP_HOME%\\lib\\).*/, { "${it[1]}*" })
+        task.windowsScript.write text
+    }
 }
 
 sourceSets {

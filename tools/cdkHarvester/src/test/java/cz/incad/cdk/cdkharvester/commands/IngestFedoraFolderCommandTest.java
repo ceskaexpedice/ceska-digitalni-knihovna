@@ -12,8 +12,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +23,7 @@ public class IngestFedoraFolderCommandTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        tempDir = Files.createTempDirectory("test").toFile();
+        tempDir = FilesUtils.createTempDirectory("test");
         this.foxmlExpections(this.tempDir);
     }
 
@@ -36,7 +34,7 @@ public class IngestFedoraFolderCommandTest extends TestCase {
     }
 
     public void testIngestFolderCommandTest() throws IOException {
-        List<String> processedPids = new ArrayList<>();
+        List<String> processedPids = new ArrayList<String>();
         IngestFedoraFolderCommand p = EasyMock.createMockBuilder(IngestFedoraFolderCommand.class)
                 .withConstructor()
                 .addMockedMethod("ingest")
@@ -52,7 +50,7 @@ public class IngestFedoraFolderCommandTest extends TestCase {
     }
 
     public void testSkipFolderCommandTest() throws IOException {
-        List<String> processedPids = new ArrayList<>();
+        List<String> processedPids = new ArrayList<String>();
         IngestFedoraFolderCommand p = EasyMock.createMockBuilder(IngestFedoraFolderCommand.class)
                 .withConstructor()
                 .addMockedMethod("ingest")

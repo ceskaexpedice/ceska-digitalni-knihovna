@@ -9,7 +9,6 @@ import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipInputStream;
@@ -22,7 +21,7 @@ public abstract class AbstractFailingIngestFedoraCommandTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        tempDir = Files.createTempDirectory("test").toFile();
+        tempDir = FilesUtils.createTempDirectory("test");
         this.foxmlExpections(this.tempDir);
     }
 
@@ -63,7 +62,7 @@ public abstract class AbstractFailingIngestFedoraCommandTest extends TestCase {
 
         EasyMock.replay(folder);
 
-        List<String> params = new ArrayList<>();
+        List<String> params = new ArrayList<String>();
         params.add(this.tempDir.getAbsolutePath());
 
         if (getThresholdIteration() > 0) {

@@ -26,7 +26,7 @@ public class IngestFedoraFileCommand implements  Command{
             LOGGER.info("derived pid :"+pid);
             ingest(pid, is);
         } catch (Throwable e) {
-            LOGGER.log(Level.SEVERE,e.getMessage(),e);
+            LOGGER.log(Level.SEVERE,e.getMessage());
             throw new IngestIOException(pid, f, e);
         }
     }

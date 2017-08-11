@@ -22,6 +22,12 @@ public class IngestIOException extends IOException {
         super(cause);
     }
 
+    public IngestIOException(String pid, File file, String message) {
+        super(message);
+        this.pid = pid;
+        this.ingestedFile = file;
+    }
+
     public IngestIOException(String pid, File file, Throwable cause) {
         super(cause);
         this.pid = pid;
