@@ -2,7 +2,8 @@ apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'eclipse'
 
-apply plugin: 'application'
+// disabled command line tool
+//apply plugin: 'application'
 
  repositories {
 		 	/*
@@ -81,8 +82,8 @@ apply plugin: 'application'
         }
 	// ~ overwritten windows encoding 
 	
-sourceCompatibility = '1.6'
-targetCompatibility= '1.6'
+sourceCompatibility = '1.8'
+targetCompatibility= '1.8'
 
 dependencies {
    compile group: 'cz.incad.kramerius', name: 'common', version: '5.+'
@@ -93,23 +94,24 @@ dependencies {
 }
 
 
-mainClassName = "cz.incad.cdk.cdkharvester.CommandLineIngest"
-
-
-tasks.withType(CreateStartScripts).each { task ->
-    task.doLast {
-        String text = task.windowsScript.text
-        text = text.replaceFirst(/(set CLASSPATH=%APP_HOME%\\lib\\).*/, { "${it[1]}*" })
-        task.windowsScript.write text
-    }
-}
-
-sourceSets {
-	main {
-		resources {
-			srcDir  'src/main/java'
-			exclude 'src/main/java/**/*.java'
-		}	
-	}
-}
+// *DISABLED command line tool
+//mainClassName = "cz.incad.cdk.cdkharvester.CommandLineIngest"
+//
+//
+//tasks.withType(CreateStartScripts).each { task ->
+//    task.doLast {
+//        String text = task.windowsScript.text
+//        text = text.replaceFirst(/(set CLASSPATH=%APP_HOME%\\lib\\).*/, { "${it[1]}*" })
+//        task.windowsScript.write text
+//    }
+//}
+//
+//sourceSets {
+//	main {
+//		resources {
+//			srcDir  'src/main/java'
+//			exclude 'src/main/java/**/*.java'
+//		}
+//	}
+//}
 

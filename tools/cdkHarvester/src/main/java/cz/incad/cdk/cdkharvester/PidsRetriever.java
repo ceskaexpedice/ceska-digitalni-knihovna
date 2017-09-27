@@ -16,9 +16,7 @@
  */
 package cz.incad.cdk.cdkharvester;
 
-import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
 
 import cz.incad.kramerius.utils.IOUtils;
 
@@ -41,8 +39,8 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 
+import cz.incad.kramerius.utils.StringUtils;
 import org.apache.commons.httpclient.util.URIUtil;
-import org.kramerius.replications.BasicAuthenticationClientFilter;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -54,6 +52,10 @@ import org.xml.sax.SAXException;
 public class PidsRetriever {
 
     static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(PidsRetriever.class.getName());
+
+    public static final SimpleDateFormat STANDARD_SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    public static final SimpleDateFormat WO_MILLISECONDS_SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
     String harvestUrl;
     String userName;
     String pswd;
@@ -64,9 +66,11 @@ public class PidsRetriever {
     XPathExpression expr;
     final String APIURL_PREFIX = "/api/v4.6/cdk/prepare?rows=500&date=";
     Queue<Map.Entry<String, String>> qe;
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-    public PidsRetriever(String date, String k4Url, String userName, String pswd) throws ParseException {
+
+    private String dateLimit;
+
+    public PidsRetriever(String date, String k4Url, String userName, String pswd, String dateLimit) throws ParseException {
         this.initial_date = date;
         this.actual_date = date;
         this.harvestUrl = k4Url + APIURL_PREFIX;
@@ -74,13 +78,22 @@ public class PidsRetriever {
         this.pswd = pswd;
         xpath = factory.newXPath();
         qe = new LinkedList<Map.Entry<String, String>>();
+
+        this.dateLimit = dateLimit;
     }
 
     public boolean hasNext() throws Exception {
         if (!qe.iterator().hasNext()) {
             getDocs();
         }
-        return qe.iterator().hasNext();
+        boolean be = qe.iterator().hasNext();
+        if (be) {
+            Map.Entry<String, String> peek = qe.peek();
+            if (dateLimitTouched(peek.getValue())) {
+                return false;
+            }
+        }
+        return be;
     }
 
     public Map.Entry<String, String> next() throws ParseException {
@@ -92,6 +105,9 @@ public class PidsRetriever {
 
     private void getDocs() throws Exception {
         String urlStr = harvestUrl + URIUtil.encodeQuery(actual_date);
+        if (dateLimitTouched(this.actual_date)) return;
+
+
         logger.log(Level.INFO, "urlStr: {0}", urlStr);
         org.w3c.dom.Document solrDom = solrResults(urlStr);
         String xPathStr = "/response/result/@numFound";
@@ -111,8 +127,26 @@ public class PidsRetriever {
         }
     }
 
-	protected org.w3c.dom.Document solrResults(String urlStr) throws SAXException, IOException, ParserConfigurationException {
-        WebResource r = CDKImportProcess.client(urlStr,userName,pswd);
+    private boolean dateLimitTouched(String testingDate) throws ParseException {
+        if (this.dateLimit != null && StringUtils.isAnyString(this.dateLimit)) {
+            Date parsedActual = null;
+            try {
+                parsedActual = STANDARD_SIMPLE_DATE_FORMAT.parse(testingDate);
+            } catch (ParseException e) {
+                parsedActual = WO_MILLISECONDS_SIMPLE_DATE_FORMAT.parse(testingDate);
+            }
+            Date parsedLimit = STANDARD_SIMPLE_DATE_FORMAT.parse(this.dateLimit);
+            boolean after = parsedActual.after(parsedLimit);
+            if (after) {
+                logger.info("Date limit touched "+testingDate);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected org.w3c.dom.Document solrResults(String urlStr) throws SAXException, IOException, ParserConfigurationException {
+        WebResource r = AbstractCDKSourceHarvestProcess.client(urlStr,userName,pswd);
         DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 		InputStream is = null;
 		try {

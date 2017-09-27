@@ -106,7 +106,7 @@ public class CDKImportProcessTest extends TestCase {
 		});
 
 
-		EasyMock.expect(p.getPidsRetriever("1900-01-01T00:00:00.002Z")).andReturn(retriever).anyTimes();
+		EasyMock.expect(p.getPidsRetriever("1900-01-01T00:00:00.002Z", null)).andReturn(retriever).anyTimes();
 
 		p.processFoxmlBatch();
 		EasyMock.expectLastCall().andDelegateTo(cdkProcessDelegator("knav")).anyTimes();
@@ -138,11 +138,11 @@ public class CDKImportProcessTest extends TestCase {
 		// set for test variable
 		p.getTransformer().setParameter("_for_tests", true);
 
-		p.getDocs("1900-01-01T00:00:00.002Z");
+		p.getDocs("1900-01-01T00:00:00.002Z", null);
 	}
 
 	// delegated and processed 
-	private CDKImportProcess cdkProcessDelegator(final String sourceName) throws IOException {
+	private CDKImportProcess cdkProcessDelegator(final String sname) throws IOException {
 		CDKImportProcess delegator = new CDKImportProcess() {
 
 			public final int NUMBER_OF_DOC = 1184;
@@ -153,7 +153,7 @@ public class CDKImportProcessTest extends TestCase {
 
 			@Override
 			protected void processFoxmlBatch() throws IOException, InterruptedException {
-				File batchFolders = FilesUtils.batchFolders(sourceName);
+				File batchFolders = FilesUtils.batchFolders(sname);
 				File subFolder = new File(batchFolders, FilesUtils.FOXML_FILES);
 				Assert.assertNotNull(subFolder.listFiles());
 				Assert.assertTrue(subFolder.listFiles().length > 0);
@@ -165,7 +165,7 @@ public class CDKImportProcessTest extends TestCase {
 
 			@Override
 			protected void processSolrXmlBatch() throws IOException {
-				File batchFolders = FilesUtils.batchFolders(sourceName);
+				File batchFolders = FilesUtils.batchFolders(sname);
 				File subFolder = new File(batchFolders, FilesUtils.SOLRXML_FILES);
 				Assert.assertNotNull(subFolder.listFiles());
 				Assert.assertTrue(subFolder.listFiles().length > 0);
@@ -220,7 +220,7 @@ public class CDKImportProcessTest extends TestCase {
 	private PidsRetriever pidsRetrieverMocked() throws SAXException, IOException, ParserConfigurationException {
 		PidsRetriever retriever = EasyMock
 				.createMockBuilder(PidsRetriever.class).withConstructor("1900-01-01T00:00:00.002Z",
-						"http://localhost:8080/search", "krameriusAdmin", "krameriusAdmin")
+						"http://localhost:8080/search", "krameriusAdmin", "krameriusAdmin","")
 				.addMockedMethod("solrResults").createMock();
 
 		EasyMock.expect(retriever.solrResults(

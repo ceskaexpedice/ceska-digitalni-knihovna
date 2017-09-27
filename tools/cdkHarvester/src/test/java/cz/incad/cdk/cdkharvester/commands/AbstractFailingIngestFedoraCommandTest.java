@@ -22,6 +22,7 @@ public abstract class AbstractFailingIngestFedoraCommandTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         tempDir = FilesUtils.createTempDirectory("test");
+        if (!tempDir.exists()) tempDir.mkdirs();
         this.foxmlExpections(this.tempDir);
     }
 
@@ -36,6 +37,7 @@ public abstract class AbstractFailingIngestFedoraCommandTest extends TestCase {
             @Override
             public void onIterate(String name, String pid, ZipInputStream zipStream) throws IOException {
                 File f = new File(folder, pid.replace(":","_"));
+                if (!f.exists()) f.createNewFile();
                 IOUtils.saveToFile(zipStream,f);
             }
         });

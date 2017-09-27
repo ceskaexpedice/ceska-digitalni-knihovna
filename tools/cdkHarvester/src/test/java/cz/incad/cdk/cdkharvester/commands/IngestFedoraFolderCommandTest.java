@@ -24,6 +24,7 @@ public class IngestFedoraFolderCommandTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         tempDir = FilesUtils.createTempDirectory("test");
+        if (!tempDir.exists()) tempDir.mkdirs();
         this.foxmlExpections(this.tempDir);
     }
 

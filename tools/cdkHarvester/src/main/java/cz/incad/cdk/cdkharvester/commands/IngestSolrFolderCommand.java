@@ -137,9 +137,7 @@ public class IngestSolrFolderCommand implements  Command{
     protected void commit() throws java.rmi.RemoteException, Exception {
         String s = "<commit />";
         LOGGER.log(Level.FINE, "commit");
-
         postData(new StringReader(s), new StringBuilder());
-
     }
 
 
