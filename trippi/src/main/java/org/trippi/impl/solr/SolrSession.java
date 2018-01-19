@@ -103,7 +103,11 @@ public class SolrSession implements TriplestoreSession {
             if (object.equals("*")) {
                 builder.append(object);
             } else {
-                builder.append("\"").append(object).append("\"");
+                if (object.startsWith("\"") && object.endsWith("\"")) {
+                    builder.append(object);
+                } else {
+                    builder.append("\"").append(object).append("\"");
+                }
             }
 
 
@@ -173,7 +177,7 @@ public class SolrSession implements TriplestoreSession {
                     byte[] digest = md5.digest((subject.toString() + " " + predicate.toString() + " " + object.toString()).getBytes("UTF-8"));
                     jsonObject.put("id",bytesToHex(digest));
 
-                    clientPOST(this.httpclient,solrUpdatingPoint(this.solrPoint), jsonObject);
+                    clientPOSTAdd(this.httpclient,solrUpdatingPoint(this.solrPoint), jsonObject);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -188,18 +192,60 @@ public class SolrSession implements TriplestoreSession {
             try {
 
                 JSONObject queryObject =new JSONObject();
+
                 StringBuilder builder = new StringBuilder();
-                builder.append(SolrTrippiUtils.SUBJECT).append(':').append(t.getSubject().toString());
-                builder.append(" AND ");
-                builder.append(SolrTrippiUtils.OBJECT).append(':').append(t.getObject().toString());
-                builder.append(" AND ");
-                builder.append(SolrTrippiUtils.PREDICATE).append(':').append(t.getPredicate().toString());
-                queryObject.put("query", queryObject);
+                String subjectString = t.getSubject().toString();
 
-                JSONObject deleteObject = new JSONObject();
-                deleteObject.put("delete", queryObject);
+                builder.append(SolrTrippiUtils.SUBJECT).append(':').append('"');
+                if (!subjectString.startsWith("<")) {
+                    builder.append('<');
+                }
+                builder.append(t.getSubject().toString());
+                if (!subjectString.endsWith(">")) {
+                    builder.append('>');
+                }
+                builder.append('"');
 
-                clientPOST(this.httpclient,solrUpdatingPoint(this.solrPoint), deleteObject);
+                builder.append(" AND ");
+
+                builder.append(SolrTrippiUtils.OBJECT).append(':').append('"');;
+                String objectString = t.getObject().toString();
+                if (t.getObject().isURIReference()) {
+                    if (!objectString.startsWith("<")) {
+                        builder.append('<');
+                    }
+                    builder.append(objectString);
+                    if (!objectString.endsWith(">")) {
+                        builder.append('>');
+                    }
+                } else {
+                    if (objectString.startsWith("\"")) {
+                        builder.append('\\');
+                    }
+                    builder.append(objectString);
+                    if (objectString.startsWith("\"")) {
+                        builder.append('\\');
+                    }
+                }
+                builder.append('"');
+
+                builder.append(" AND ");
+
+
+                String predicateString = t.getPredicate().toString();
+                builder.append(SolrTrippiUtils.PREDICATE).append(':').append('"');
+                if (!predicateString.startsWith("<")) {
+                    builder.append('<');
+                }
+                builder.append(t.getPredicate().toString());
+                if (!predicateString.endsWith(">")) {
+                    builder.append('>');
+                }
+                builder.append('"');
+
+                queryObject.put("query", builder.toString());
+
+                clientPOSTDelete(this.httpclient,solrUpdatingPoint(this.solrPoint), queryObject);
 
             } catch (IOException e) {
                 throw new RuntimeException(e);

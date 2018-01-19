@@ -12,8 +12,12 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SolrTrippiUtils {
+
+    public static Logger LOGGER = Logger.getLogger(SolrTrippiUtils.class.getName());
 
     public static final String SUBJECT = "subject";
     public static final String PREDICATE = "predicate";
@@ -37,7 +41,29 @@ public class SolrTrippiUtils {
         return new JSONObject(new String(bytes, "UTF-8"));
     }
 
-    public static JSONObject clientPOST(DefaultHttpClient httpclient, String url, JSONObject data) throws IOException {
+    public static JSONObject clientPOSTDelete(DefaultHttpClient httpclient, String url, JSONObject data) throws IOException {
+        HttpPost httpPost = new HttpPost(url);
+        httpPost.setHeader("Accept", "application/json");
+        httpPost.setHeader("Content-type", "application/json");
+
+
+        JSONObject updateJSON = new JSONObject();
+        updateJSON.put("delete", data);
+
+        String s = updateJSON.toString();
+        StringEntity entity = new StringEntity(s, "UTF-8");
+        entity.setContentType("application/json");
+        httpPost.setEntity(entity);
+
+        HttpResponse response = httpclient.execute(httpPost);
+        if (response.getStatusLine().getStatusCode() != 200) {
+            String sStream = EntityUtils.toString(response.getEntity());
+            LOGGER.log(Level.SEVERE, sStream);
+        }
+        return new JSONObject(EntityUtils.toString(response.getEntity()));
+    }
+
+    public static JSONObject clientPOSTAdd(DefaultHttpClient httpclient, String url, JSONObject data) throws IOException {
         HttpPost httpPost = new HttpPost(url);
         httpPost.setHeader("Accept", "application/json");
         httpPost.setHeader("Content-type", "application/json");
@@ -53,8 +79,11 @@ public class SolrTrippiUtils {
         entity.setContentType("application/json");
         httpPost.setEntity(entity);
 
-
         HttpResponse response = httpclient.execute(httpPost);
+        if (response.getStatusLine().getStatusCode() != 200) {
+            String sStream = EntityUtils.toString(response.getEntity());
+            LOGGER.log(Level.SEVERE, sStream);
+        }
         return new JSONObject(EntityUtils.toString(response.getEntity()));
     }
 
