@@ -226,11 +226,7 @@ public enum MZKMigrationParts  {
 
     static Logger LOGGER = Logger.getLogger(MZKMigrationParts.class.getName());
 
-    static int LOG_MESSAGE_ITERATION = 60;
-
-
-
-
-
+    // Message after 60 iterations
+    static int LOG_MESSAGE_ITERATION = 10000;
 
 }
