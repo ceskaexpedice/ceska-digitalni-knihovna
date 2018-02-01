@@ -191,7 +191,7 @@ public enum MZKMigrationParts  {
         List<Pair<String,String>> ids = new JDBCQueryTemplate<Pair<String, String>>(db, false){
 
             public boolean handleRow(ResultSet rs, List<Pair<String,String>> returnsList) throws SQLException {
-
+                long startDebugPoint1 = System.currentTimeMillis();
                 Integer currentIteration = stack.pop();
                 if ((currentIteration % LOG_MESSAGE_ITERATION) == 0) {
                     long stop = System.currentTimeMillis();
@@ -201,22 +201,43 @@ public enum MZKMigrationParts  {
 
                 String token = rs.getString("token");
                 String path = rs.getString("path");
+                long endDebugPoint1 = System.currentTimeMillis();
+                if ((currentIteration % LOG_MESSAGE_ITERATION) == 0) {
+                    LOGGER.info(" \t db operations took "+(endDebugPoint1 - startDebugPoint1)+ " ms ");
+                }
 
+
+                long startDebugPoint2 = System.currentTimeMillis();
                 token = token.replaceAll("\\+", "/");
                 String hex = Utils.asHex(MD5.digest(("info:fedora/"+token).getBytes(Charset.forName("UTF-8"))));
-
-                File objectFile = new File(rs.getString("path"));
-                try {
-                    File directory = Utils.directory(targetDir, hex, 2, 3);
-                    FileUtils.moveFileToDirectory(objectFile, directory, true);
-                    new File(directory,  objectFile.getName()).renameTo(new File(directory, Utils.encode("info:fedora/" + token)));
-
-                    consumer.accept(new File(directory, Utils.encode("info:fedora/" + token)));
-
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                long endDebugPoint2 = System.currentTimeMillis();
+                if ((currentIteration % LOG_MESSAGE_ITERATION) == 0) {
+                    LOGGER.info(" \t db hex replace and hex operations  took "+(endDebugPoint2 - startDebugPoint2)+ " ms ");
                 }
-                return true;
+
+                File objectFile = new File(path);
+                if (objectFile.exists()) {
+                    try {
+                        long startDebugPoint3 = System.currentTimeMillis();
+
+                        File directory = Utils.directory(targetDir, hex, 2, 3);
+                        FileUtils.moveFileToDirectory(objectFile, directory, true);
+                        new File(directory, objectFile.getName()).renameTo(new File(directory, Utils.encode("info:fedora/" + token)));
+                        long endDebugPoint3 = System.currentTimeMillis();
+                        if ((currentIteration % LOG_MESSAGE_ITERATION) == 0) {
+                            LOGGER.info(" \t db io operations and took " + (endDebugPoint3 - startDebugPoint3) + " ms ");
+                        }
+
+                        consumer.accept(new File(directory, Utils.encode("info:fedora/" + token)));
+
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    return true;
+                } else {
+                    return true;
+
+                }
             }
         }.executeQuery(sqlCommand);
     }
