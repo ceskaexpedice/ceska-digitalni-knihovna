@@ -208,7 +208,7 @@ public enum MZKMigrationParts  {
                 if (objectFile.exists()) {
 
                     File directory = Utils.directory(targetDir, hex, 2, 3);
-
+                    directory.mkdirs();
 
                     long start = System.currentTimeMillis();
                     File targetFile = new File(directory, Utils.encode("info:fedora/" + token));
