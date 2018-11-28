@@ -15,6 +15,16 @@ repositories {
     // You can declare any Maven/Ivy/file repository here.
     jcenter()
     mavenLocal()
+    mavenCentral()
+
+    maven {
+        url 'http://m2.duraspace.org/content/repositories/releases/'
+    }
+
+    maven {
+        url 'http://m2.duraspace.org/content/repositories/public/'
+    }
+
 }
 
 dependencies {
@@ -32,8 +42,6 @@ dependencies {
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:23.0'
     //implementation 'org.fcrepo:mptstore:1.5.10'
-
-
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
