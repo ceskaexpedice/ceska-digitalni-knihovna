@@ -1,4 +1,4 @@
-	package org.cas.lib.cdl;
+package org.cas.lib.cdl;
 
 import static org.cas.lib.cdl.Utils.*;
 
@@ -47,21 +47,34 @@ import cz.incad.kramerius.utils.OAIMWUtils;
 import cz.incad.kramerius.utils.OAISolrAccess;
 import cz.incad.kramerius.utils.XMLUtils;
 import cz.incad.kramerius.utils.conf.KConfiguration;
+import org.w3c.dom.NodeList;
 
 public class PeriodicalProvideServlet extends HttpServlet {
 
 	public static final Logger LOGGER = Logger.getLogger(PeriodicalProvideServlet.class.getName());
 
+        /*
 	public static final String DC_STREAM_LOCATION = "https://cdk.lib.cas.cz/search/api/v5.0/item/%s/streams/DC";
 	public static final String BIBLIO_MODS_STREAM_LOCATION = "https://cdk.lib.cas.cz/search/api/v5.0/item/%s/streams/BIBLIO_MODS";
 	public static final String ITEM_LOCATION = "https://cdk.lib.cas.cz/search/api/v5.0/item/%s";
-	public static final String CDK_LOCATION = "https://cdk.lib.cas.cz/search/%s";
+	public static final String CDK_LOCATION = "https://cdk.lib.cas.cz/search/%s"; /*
 	
 	/**  client location */
-	public static final String CDK_CLIENT_LOCATION = "https://cdk.lib.cas.cz/client/%s";
+	//public static final String CDK_CLIENT_LOCATION = "https://cdk.lib.cas.cz/client/%s";
 	
 	/** handle for detecting uuid */
-	public static final String HANDLE_REPLACEMENT = "https://cdk.lib.cas.cz/client/handle/";
+        //public static final String HANDLE_REPLACEMENT = "https://cdk.lib.cas.cz/client/handle/";
+        
+	public static final String DC_STREAM_LOCATION = "http://localhost:8080/search/api/v5.0/item/%s/streams/DC";
+	public static final String BIBLIO_MODS_STREAM_LOCATION = "http://localhost:8080/search/api/v5.0/item/%s/streams/BIBLIO_MODS";
+	public static final String ITEM_LOCATION = "http://localhost:8080/search/api/v5.0/item/%s";
+	public static final String CDK_LOCATION = "http://localhost:8080/search/%s";
+	
+	/**  client location */
+	public static final String CDK_CLIENT_LOCATION = "http://localhost:8080/client/%s";
+	
+	/** handle for detecting uuid */
+	public static final String HANDLE_REPLACEMENT = "http://localhost:8080/client/handle/";
 	
 	
 	
@@ -87,9 +100,24 @@ public class PeriodicalProvideServlet extends HttpServlet {
 		
 		for (Element uuidElem : elements) {
 			String cnt = uuidElem.getTextContent();
-			Element nuuid = dc.createElementNS("http://purl.org/dc/elements/1.1/","dc:identifier");
-			nuuid.setTextContent(HANDLE_REPLACEMENT+cnt);
-			dc.getDocumentElement().insertBefore(nuuid, uuidElem);
+                        
+                        NodeList nodeList = dc.getElementsByTagName("dc:identifier");
+                        Boolean duplicate = false; 
+                        for (int i = 0; i < nodeList.getLength(); i++) { 
+                            Element uuidOri = (Element)nodeList.item(i);
+                            String uuidOriText = uuidOri.getTextContent();;
+                            
+                            if (uuidOriText.equals(HANDLE_REPLACEMENT+cnt)) {
+                                duplicate = true;
+                                break;
+                            }
+                        }
+                        
+                        if (duplicate == false) {
+                            Element nuuid = dc.createElementNS("http://purl.org/dc/elements/1.1/","dc:identifier");
+                            nuuid.setTextContent(HANDLE_REPLACEMENT+cnt);
+                            dc.getDocumentElement().insertBefore(nuuid, uuidElem); 
+                        }
 		}
 	}
 
@@ -110,7 +138,7 @@ public class PeriodicalProvideServlet extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		String action = req.getParameter("action");
+                String action = req.getParameter("action");
 		Actions act = Actions.valueOf(action);
 		act.perform(this.fa, this.sa, this.jsonCache, this.dcCache, req, resp);
 	}
@@ -148,7 +176,7 @@ public class PeriodicalProvideServlet extends HttpServlet {
 						elementShownAt.setTextContent(formattedURL);
 						root.appendChild(elementShownAt);
 						
-						boolean allowed = OAIMWUtils.process(fa, sa, pid, null);
+						boolean allowed = OAIMWUtils.process(fa, sa, pid, null);             
 						if (allowed) {
 							//<edm:rights rdf:resource="http://creativecommons.org/publicdomain/mark/1.0/"/> 
 							Element right = europeana.createElementNS("http://www.europeana.eu/schemas/ese/","europeana:rights");
