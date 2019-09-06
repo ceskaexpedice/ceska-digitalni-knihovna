@@ -8,7 +8,8 @@ import cz.incad.cdk.cdkharvester.changeindex.ChangeField;
 import cz.incad.cdk.cdkharvester.changeindex.PrivateConnectUtils;
 import cz.incad.cdk.cdkharvester.changeindex.ResultsUtils;
 import cz.incad.cdk.cdkharvester.commands.SupportedCommands;
-import cz.incad.cdk.cdkharvester.process.ProcessFOXML;
+import cz.incad.cdk.cdkharvester.process.foxml.ProcessFOXML;
+import cz.incad.cdk.cdkharvester.process.solr.ProcessSOLRXML;
 import cz.incad.cdk.cdkharvester.utils.FilesUtils;
 import cz.incad.kramerius.impl.FedoraAccessImpl;
 import cz.incad.kramerius.utils.IOUtils;
@@ -18,6 +19,7 @@ import org.apache.commons.configuration.Configuration;
 import org.kramerius.replications.BasicAuthenticationClientFilter;
 import org.w3c.dom.Document;
 
+import javax.swing.text.html.Option;
 import javax.ws.rs.core.MediaType;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -30,12 +32,17 @@ import java.net.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 
 public abstract class AbstractCDKSourceHarvestProcess {
 
+    protected List<ProcessFOXML> foxmlProcessingChain = new ArrayList<ProcessFOXML>();
+    protected List<ProcessSOLRXML> solrProcessingChain = new ArrayList<>();
+
+
     protected File batchFolders;
-    protected List<ProcessFOXML> processingChain = new ArrayList<ProcessFOXML>();
+
     protected Transformer transformer;
     protected String k4Url;
     protected String sourceName;
@@ -176,8 +183,8 @@ public abstract class AbstractCDKSourceHarvestProcess {
         IOUtils.copyStreams(foxml, bos);
 
         InputStream processingStream = new ByteArrayInputStream(bos.toByteArray());
-        for (int i = 0, ll = this.processingChain.size(); i < ll; i++) {
-            ProcessFOXML unit = processingChain.get(i);
+        for (int i = 0, ll = this.foxmlProcessingChain.size(); i < ll; i++) {
+            ProcessFOXML unit = foxmlProcessingChain.get(i);
             processingStream = new ByteArrayInputStream(unit.process(this.k4Url, pid, processingStream));
         }
         storeFOXMLToDisk(pid, processingStream);
@@ -323,8 +330,8 @@ public abstract class AbstractCDKSourceHarvestProcess {
     }
 
     public String getCollectionPid() {
-		return collectionPid;
-	}
+        return collectionPid;
+    }
 
     protected void changeTranformationVariables() {
         getTransformer().setParameter("collectionPid", getCollectionPid());
@@ -332,38 +339,43 @@ public abstract class AbstractCDKSourceHarvestProcess {
     }
 
     protected void prepareIndex(String pid, boolean replace) throws Exception {
-    	org.json.JSONObject results = findDocFromCurrentIndex(pid);
-    	if (!replace && ResultsUtils.docsExists(results)) {
-    		if (ResultsUtils.collectionExists(results)) {
-    			List<String> collections = ResultsUtils.disectCollections(results);
-    			if (!collections.contains(this.getCollectionPid())) {
-    				AddField addField = new AddField(pid, "collection", this.getCollectionPid());
-    				addField.addValueToArray(getSolrUpdateEndpoint());
-    			}
-    		} else {
-    	        ChangeField chField = new ChangeField(pid, "collection", this.getCollectionPid());
-    	        chField.changeField(getSolrUpdateEndpoint());
-    		}
-    	} else {
+        org.json.JSONObject results = findDocFromCurrentIndex(pid);
+        if (!replace && ResultsUtils.docsExists(results)) {
+            if (ResultsUtils.collectionExists(results)) {
+                List<String> collections = ResultsUtils.disectCollections(results);
+                if (!collections.contains(this.getCollectionPid())) {
+                    AddField addField = new AddField(pid, "collection", this.getCollectionPid());
+                    addField.addValueToArray(getSolrUpdateEndpoint());
+                }
+            } else {
+                ChangeField chField = new ChangeField(pid, "collection", this.getCollectionPid());
+                chField.changeField(getSolrUpdateEndpoint());
+            }
+        } else {
 
-        	try {
-				String url = k4Url + "/api/" + CDKImportProcess.API_VERSION + "/cdk/" + pid + "/solrxml";
-				InputStream t = solrxml(url);
+            try {
+                String url = k4Url + "/api/" + CDKImportProcess.API_VERSION + "/cdk/" + pid + "/solrxml";
+                InputStream t = solrxml(url);
 
+                byte[] rawData = IOUtils.bos(t, true);
+                ByteArrayInputStream processingStream = new ByteArrayInputStream(rawData);
+                for (int i = 0, ll = this.solrProcessingChain.size(); i < ll; i++) {
+                    ProcessSOLRXML unit = solrProcessingChain.get(i);
+                    processingStream = new ByteArrayInputStream(unit.process(this.k4Url, pid, processingStream));
+                }
+                StreamResult destStream = new StreamResult(new StringWriter());
+                changeTranformationVariables();
+                getTransformer().transform(new StreamSource(processingStream), destStream);
 
-				StreamResult destStream = new StreamResult(new StringWriter());
-				changeTranformationVariables();
-				getTransformer().transform(new StreamSource(t), destStream);
+                StringWriter sw = (StringWriter) destStream.getWriter();
 
-				StringWriter sw = (StringWriter) destStream.getWriter();
-
-				//logger.info(sw.toString());
+                //logger.info(sw.toString());
                 storeSOLRXMLToDisk(pid, new ByteArrayInputStream(sw.toString().getBytes(Charset.forName("UTF-8"))));
 
-			} catch (UniformInterfaceException e) {
-				CDKImportProcess.logger.info("cannot prepareIndex document");
-			}
-    	}
+            } catch (UniformInterfaceException e) {
+                CDKImportProcess.logger.info("cannot prepareIndex document");
+            }
+        }
     }
 
     protected InputStream solrxml(String url) {
@@ -379,18 +391,18 @@ public abstract class AbstractCDKSourceHarvestProcess {
     }
 
     protected void replicate(String pid, boolean replace) throws Exception {
-    	String url = k4Url + "/api/" + CDKImportProcess.API_VERSION + "/cdk/" + pid + "/foxml?collection=" + getCollectionPid();
+        String url = k4Url + "/api/" + CDKImportProcess.API_VERSION + "/cdk/" + pid + "/foxml?collection=" + getCollectionPid();
         CDKImportProcess.logger.log(Level.FINE, "get foxml from origin {0}...", url);
 
         PIDParser parser = new PIDParser(pid);
-        if (!parser.isPagePid()) {
-        	if (!Utils.getSkipList().contains(pid)) {
-        	    InputStream t = foxml(pid, url);
+        if (!parser.isPagePid() && !pid .contains("/@")) {
+            if (!Utils.getSkipList().contains(pid)) {
+                InputStream t = foxml(pid, url);
                 prepareFOXML(t, pid);
                 prepareIndex(pid, replace);
-        	} else {
-            	CDKImportProcess.logger.log(Level.INFO,"skipping pid {0} because of configuration",pid);
-        	}
+            } else {
+                CDKImportProcess.logger.log(Level.INFO,"skipping pid {0} because of configuration",pid);
+            }
         } else {
             prepareIndex(pid, replace);
         }

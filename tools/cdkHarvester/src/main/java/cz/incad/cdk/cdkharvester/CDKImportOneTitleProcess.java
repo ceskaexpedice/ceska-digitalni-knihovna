@@ -4,28 +4,22 @@ import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIteration;
 import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIterationException;
 import cz.incad.cdk.cdkharvester.iterator.CDKHarvestIterationItem;
 import cz.incad.cdk.cdkharvester.iterator.TitleCDKHarvestIterationImpl;
-import cz.incad.cdk.cdkharvester.process.ImageReplaceProcess;
-import cz.incad.cdk.cdkharvester.process.ProcessFOXML;
+import cz.incad.cdk.cdkharvester.process.foxml.ImageReplaceProcess;
+import cz.incad.cdk.cdkharvester.process.foxml.ProcessFOXML;
 import cz.incad.cdk.cdkharvester.utils.FilesUtils;
-import cz.incad.kramerius.processes.States;
 import cz.incad.kramerius.processes.annotations.ParameterName;
 import cz.incad.kramerius.processes.annotations.Process;
 import cz.incad.kramerius.processes.impl.ProcessStarter;
 import cz.incad.kramerius.utils.conf.KConfiguration;
 import org.kramerius.Import;
 
-import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Created by pstastny on 8/11/2017.
- */
 public class CDKImportOneTitleProcess extends AbstractCDKSourceHarvestProcess {
 
     private int processed;

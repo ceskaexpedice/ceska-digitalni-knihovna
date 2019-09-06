@@ -1,4 +1,4 @@
-package cz.incad.cdk.cdkharvester.process;
+package cz.incad.cdk.cdkharvester.process.utils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;

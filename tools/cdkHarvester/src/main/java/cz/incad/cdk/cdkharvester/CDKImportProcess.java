@@ -17,21 +17,16 @@
 package cz.incad.cdk.cdkharvester;
 
 import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 
-import cz.incad.cdk.cdkharvester.changeindex.AddField;
-import cz.incad.cdk.cdkharvester.changeindex.ChangeField;
-import cz.incad.cdk.cdkharvester.changeindex.PrivateConnectUtils;
-import cz.incad.cdk.cdkharvester.changeindex.ResultsUtils;
-import cz.incad.cdk.cdkharvester.process.ImageReplaceProcess;
-import cz.incad.cdk.cdkharvester.process.ProcessFOXML;
+import cz.incad.cdk.cdkharvester.process.foxml.ImageReplaceProcess;
+import cz.incad.cdk.cdkharvester.process.foxml.ProcessFOXML;
+import cz.incad.cdk.cdkharvester.process.solr.ProcessSOLRXML;
+import cz.incad.cdk.cdkharvester.process.solr.RemoveLemmatizedFields;
 import cz.incad.cdk.cdkharvester.utils.FilesUtils;
-import cz.incad.kramerius.impl.FedoraAccessImpl;
 import cz.incad.kramerius.processes.States;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -39,27 +34,19 @@ import cz.incad.kramerius.processes.annotations.ParameterName;
 import cz.incad.kramerius.processes.annotations.Process;
 import cz.incad.kramerius.processes.impl.ProcessStarter;
 import cz.incad.kramerius.utils.conf.KConfiguration;
-import cz.incad.kramerius.utils.pid.PIDParser;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
 import java.text.ParseException;
 import javax.ws.rs.core.MediaType;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
+
 import net.sf.json.JSONObject;
 import org.kramerius.Import;
 import org.kramerius.replications.*;
-import org.w3c.dom.Document;
 
 /**
  * CDK import process
@@ -90,14 +77,16 @@ public class CDKImportProcess extends AbstractCDKSourceHarvestProcess {
      */
     public CDKImportProcess() throws IOException {
         super();
-        this.processingChain.add(new ImageReplaceProcess());
+        this.foxmlProcessingChain.add(new ImageReplaceProcess());
+        this.solrProcessingChain.add(new RemoveLemmatizedFields());
     }
 
-    public CDKImportProcess(List<ProcessFOXML> chains) {
+    public CDKImportProcess(List<ProcessFOXML> foxmlProcessChain, List<ProcessSOLRXML> solrProcessChain) {
         super();
-        this.processingChain.addAll(chains);
+        this.foxmlProcessingChain.addAll(foxmlProcessChain);
+        this.solrProcessingChain.addAll(solrProcessChain);
     }
-    
+
     @Process
     public static void cdkImport(@ParameterName("url") String url, @ParameterName("name") String name,
             @ParameterName("collectionPid") String collectionPid, @ParameterName("username") String userName,

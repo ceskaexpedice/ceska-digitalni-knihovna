@@ -13,7 +13,7 @@
     <xsl:variable name="xslfunctions" select="exts:new()" />
     <xsl:param name="collectionPid" select="collectionPid" />
     <xsl:param name="solr_url" select="'http://localhost:8080/solr/select'" />
-	<!--  specified in order to testable -->
+    <!--  specified in order to testable -->
     <xsl:param name="_for_tests" select="false()" />
 
     <xsl:template match="/">
@@ -26,20 +26,20 @@
                     <xsl:with-param name="str">"<xsl:value-of select="./str[@name='PID']"/>"</xsl:with-param></xsl:call-template></xsl:variable>
                 -->    
                 <xsl:variable name="query">"<xsl:value-of select="./str[@name='PID']"/>"</xsl:variable>    
-				<!-- 
+                <!--
                 <xsl:variable name="search_url"><xsl:value-of select="$solr_url"/>?q=PID:<xsl:value-of select="exts:encode($xslfunctions, $query)"/></xsl:variable>
                  -->
-               	<xsl:variable name="search_url">
-				    <xsl:choose>
-			        	<xsl:when test="_for_tests">
-            				<xsl:value-of select="concat($solr_url,'?q=PID:',exts:encode($xslfunctions, $query))" />
-			        	</xsl:when>
-          				<xsl:otherwise>
-			                <xsl:variable name="_pid"><xsl:value-of select="./str[@name='PID']"/></xsl:variable>    
-				        	<xsl:value-of select="concat($solr_url,'/',translate($_pid, ':', '_'))"/>
-			        	</xsl:otherwise>
-			   		</xsl:choose>
-				</xsl:variable>
+                <xsl:variable name="search_url">
+                    <xsl:choose>
+                        <xsl:when test="_for_tests">
+                            <xsl:value-of select="concat($solr_url,'?q=PID:',exts:encode($xslfunctions, $query))" />
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:variable name="_pid"><xsl:value-of select="./str[@name='PID']"/></xsl:variable>
+                            <xsl:value-of select="concat($solr_url,'/',translate($_pid, ':', '_'))"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:variable>
                     
                     
                 <xsl:for-each select="str">
@@ -67,15 +67,22 @@
                 </xsl:for-each>
                 
                 <xsl:variable name="title"><xsl:value-of select="str[@name='dc.title']" /></xsl:variable>
-                
-                <xsl:for-each select="arr[@name='dc.creator']">
-                    <field name="browse_autor" ><xsl:value-of select="exts:prepareCzech($xslfunctions, ./str)"/>##<xsl:value-of select="./str" /></field>
-                </xsl:for-each>
-                
-                <field name="browse_title" >
-                    <xsl:value-of select="exts:prepareCzech($xslfunctions, $title)"/>##<xsl:value-of select="$title"/>
-                </field>
-                
+
+
+                <xsl:if test="not(str[@name='browse_autor'])">
+                    <xsl:for-each select="arr[@name='dc.creator']">
+                        <field name="browse_autor" ><xsl:value-of select="exts:prepareCzech($xslfunctions, ./str)"/>##<xsl:value-of select="./str" /></field>
+                   </xsl:for-each>
+                </xsl:if>
+
+
+                <xsl:if test="not(str[@name='browse_title'])">
+                    <field name="browse_title" >
+                        <xsl:value-of select="exts:prepareCzech($xslfunctions, $title)"/>##<xsl:value-of select="$title"/>
+                    </field>
+                </xsl:if>
+
+
                 <xsl:call-template name="collection">
                     <xsl:with-param name="search_url" select="$search_url" />
                 </xsl:call-template>

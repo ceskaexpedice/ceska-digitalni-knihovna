@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package cz.incad.cdk.cdkharvester.process;
+package cz.incad.cdk.cdkharvester.process.foxml;
 
 import java.io.InputStream;
 

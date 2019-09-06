@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cz.incad.cdk.cdkharvester.process;
+package cz.incad.cdk.cdkharvester.process.foxml;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import cz.incad.cdk.cdkharvester.process.utils.ReplicationUtils;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -41,8 +42,8 @@ import cz.incad.kramerius.utils.XMLUtils;
  */
 public class ImageReplaceProcess implements ProcessFOXML {
 
-	public static Logger LOGGER = Logger.getLogger(ImageReplaceProcess.class.getName());
-	
+    public static Logger LOGGER = Logger.getLogger(ImageReplaceProcess.class.getName());
+
     /** Binary replaced datastram */
     public static final String[] REPLACE_DATASTREAM = { "IMG_THUMB" };
 
@@ -59,13 +60,13 @@ public class ImageReplaceProcess implements ProcessFOXML {
      * (non-Javadoc)
      * 
      * @see
-     * cz.incad.cdk.cdkharvester.process.ProcessFOXML#process(java.lang.String,
+     * cz.incad.cdk.cdkharvester.process.foxml.ProcessFOXML#process(java.lang.String,
      * java.lang.String, java.io.InputStream)
      */
     @Override
     public byte[] process(final String url, final String pid, InputStream is) throws Exception {
-    	if (is == null) return null;
-    	Document document = XMLUtils.parseDocument(is, true);
+        if (is == null) return null;
+        Document document = XMLUtils.parseDocument(is, true);
         Element docElement = document.getDocumentElement();
         if (docElement.getLocalName().equals("digitalObject")) {
             // not managed streams and should be binary
@@ -100,11 +101,11 @@ public class ImageReplaceProcess implements ProcessFOXML {
                         String idAttr = datStreamElm.getAttribute("ID");
                         String imgUrl = url + "/img?uuid=" + pid + "&action=GETRAW&stream=" + idAttr;
                         try {
-							binaryContentStream(document, datStreamElm, version, imgUrl);
-						} catch (Exception e) {
-							// something happend; must continue
-							LOGGER.log(Level.SEVERE, e.getMessage(), e);
-						}
+                            binaryContentStream(document, datStreamElm, version, imgUrl);
+                        } catch (Exception e) {
+                            // something happend; must continue
+                            LOGGER.log(Level.SEVERE, e.getMessage(), e);
+                        }
                     }
                 }
 
@@ -149,11 +150,11 @@ public class ImageReplaceProcess implements ProcessFOXML {
                         if (!expectingImgURL.equals(foxmlURL)) {
                             // must change
                             try {
-								referenceStream(document, datStreamElm, version, expectingImgURL);
-							} catch (Exception e) {
-								// something happend; must continue
-								LOGGER.log(Level.SEVERE, e.getMessage(), e);
-							}
+                                referenceStream(document, datStreamElm, version, expectingImgURL);
+                            } catch (Exception e) {
+                                // something happend; must continue
+                                LOGGER.log(Level.SEVERE, e.getMessage(), e);
+                            }
                         }
                     }
                 }
@@ -166,13 +167,13 @@ public class ImageReplaceProcess implements ProcessFOXML {
     }
 
 
-	public void referenceStream(Document document, final Element datStreamElm, Element version, URL expectingImgURL) throws DOMException, IOException, URISyntaxException {
-		ReplicationUtils.referenceForStream(document, datStreamElm, version, expectingImgURL);
-	}
+    public void referenceStream(Document document, final Element datStreamElm, Element version, URL expectingImgURL) throws DOMException, IOException, URISyntaxException {
+        ReplicationUtils.referenceForStream(document, datStreamElm, version, expectingImgURL);
+    }
 
 
-	public void binaryContentStream(Document document, final Element datStreamElm, Element version, String imgUrl)
-			throws IOException, MalformedURLException {
-		ReplicationUtils.binaryContentForStream(document, datStreamElm, version, new URL(imgUrl));
-	}
+    public void binaryContentStream(Document document, final Element datStreamElm, Element version, String imgUrl)
+            throws IOException, MalformedURLException {
+        ReplicationUtils.binaryContentForStream(document, datStreamElm, version, new URL(imgUrl));
+    }
 }

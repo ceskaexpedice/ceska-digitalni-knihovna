@@ -3,9 +3,9 @@ package cz.incad.cdk.cdkharvester.commands;
 import cz.incad.cdk.cdkharvester.ZipIteration;
 import cz.incad.cdk.cdkharvester.utils.FilesUtils;
 import cz.incad.kramerius.utils.IOUtils;
+import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.easymock.EasyMock;
-import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;

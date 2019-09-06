@@ -9,8 +9,7 @@ import org.easymock.EasyMock;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import cz.incad.cdk.cdkharvester.process.ImageReplaceProcess;
-import cz.incad.kramerius.utils.IOUtils;
+import cz.incad.cdk.cdkharvester.process.foxml.ImageReplaceProcess;
 import cz.incad.kramerius.utils.XMLUtils;
 import junit.framework.Assert;
 import junit.framework.TestCase;

@@ -1,6 +1,6 @@
 package cz.incad.cdk.cdkharvester.commands;
 
-import org.junit.Assert;
+import junit.framework.Assert;
 
 import java.io.File;
 import java.io.IOException;

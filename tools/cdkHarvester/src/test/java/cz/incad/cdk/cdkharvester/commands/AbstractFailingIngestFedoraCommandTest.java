@@ -5,7 +5,6 @@ import cz.incad.cdk.cdkharvester.utils.FilesUtils;
 import cz.incad.kramerius.utils.IOUtils;
 import junit.framework.TestCase;
 import org.easymock.EasyMock;
-import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;

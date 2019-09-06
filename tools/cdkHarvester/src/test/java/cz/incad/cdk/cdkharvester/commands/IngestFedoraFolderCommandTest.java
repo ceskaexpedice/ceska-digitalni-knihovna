@@ -1,19 +1,14 @@
 package cz.incad.cdk.cdkharvester.commands;
 
-import cz.incad.cdk.cdkharvester.CDKImportProcess;
 import cz.incad.cdk.cdkharvester.ZipIteration;
-import cz.incad.cdk.cdkharvester.process.ImageReplaceProcess;
 import cz.incad.cdk.cdkharvester.utils.FilesUtils;
 import cz.incad.kramerius.utils.IOUtils;
+import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipInputStream;
 
