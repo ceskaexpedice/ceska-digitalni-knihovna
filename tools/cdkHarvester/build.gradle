@@ -5,85 +5,88 @@ apply plugin: 'eclipse'
 // disabled command line tool
 //apply plugin: 'application'
 
+version = 1.4
+
  repositories {
-		 	/*
+            /*
             flatDir {
-		 	   dirs '../buildSrc/lib'	
-		    }*/
+               dirs '../buildSrc/lib'
+            }*/
 
-         	 maven {
-         	 	 url "http://kramerius.googlecode.com/svn/mvnrepo"
-         	 }
+             maven {
+                 url "http://kramerius.googlecode.com/svn/mvnrepo"
+             }
 
-         	 maven {
-         	 	 url "http://aplikator.googlecode.com/svn/mvnrepository"
-         	 }
-
-
-         	 mavenLocal()
-         	 mavenCentral()
-
-         	 
-         	 maven {
-         	 	 url "http://download.java.net/maven/2/"
-         	 }
-
-         	 maven {
-         	 	 url "http://m2.duraspace.org/content/repositories/releases"
-         	 }
-
-         	 maven {
-         	 	 url "https://maven.java.net/content/repositories/snapshots/"
-         	 }
-
-         	 maven {
-         	 	 url "http://guiceyfruit.googlecode.com/svn/repo/releases/"
-         	 }
+             maven {
+                 url "http://aplikator.googlecode.com/svn/mvnrepository"
+             }
 
 
-         	 maven {
-         	 	 url "http://jsdoctk-plugin.googlecode.com/svn/repo"
-         	 }
-         	 
-         	 maven {
-         	 	 url "http://repository.springsource.com/maven/bundles/external"
-         	 }
+             mavenLocal()
+             mavenCentral()
 
-         	 maven {
-         	 	 url "https://repository.jboss.org/nexus/content/repositories/thirdparty-releases"
-         	 }
 
-         	 maven {
-         	 	 url "http://download.osgeo.org/webdav/geotools/"
-         	 }
-         	 
+             maven {
+                 url "http://download.java.net/maven/2/"
+             }
+
+             maven {
+                 url "http://m2.duraspace.org/content/repositories/releases"
+             }
+
+             maven {
+                 url "https://maven.java.net/content/repositories/snapshots/"
+             }
+
+             maven {
+                 url "http://guiceyfruit.googlecode.com/svn/repo/releases/"
+             }
+
+
+             maven {
+                 url "http://jsdoctk-plugin.googlecode.com/svn/repo"
+             }
+
+             maven {
+                 url "http://repository.springsource.com/maven/bundles/external"
+             }
+
+             maven {
+                 url "https://repository.jboss.org/nexus/content/repositories/thirdparty-releases"
+             }
+
+             maven {
+                 url "http://download.osgeo.org/webdav/geotools/"
+             }
+
                  maven {
                         url "http://repo.jfrog.org/artifactory/libs-releases/"
                  }
 
-         	 maven {
-         	 	 url "https://maven.atlassian.com/content/groups/public"
-         	 }
-         	 
-         	 maven {
-         	 	 url "http://jbig2-imageio.googlecode.com/svn/maven-repository"
-         	 }
+             maven {
+                 url "https://maven.atlassian.com/content/groups/public"
+             }
+
+             maven {
+                 url "http://jbig2-imageio.googlecode.com/svn/maven-repository"
+             }
 
          }
 
-		 
-		 //~ overwrite windows encoding		
+
+         //~ overwrite windows encoding
         test {
            systemProperty "file.encoding", "utf-8"
         }
-		
+
         tasks.withType(JavaCompile) {
            options.encoding = 'UTF-8'
         }
-	// ~ overwritten windows encoding 
-	
-sourceCompatibility = '1.8'
-targetCompatibility= '1.8'
+    // ~ overwritten windows encoding
+
+sourceCompatibility = '1.7'
+targetCompatibility= '1.7'
+
 
 dependencies {
    compile group: 'cz.incad.kramerius', name: 'common', version: '5.+'
@@ -105,13 +108,13 @@ dependencies {
 //        task.windowsScript.write text
 //    }
 //}
-//
-//sourceSets {
-//	main {
-//		resources {
-//			srcDir  'src/main/java'
-//			exclude 'src/main/java/**/*.java'
-//		}
-//	}
-//}
+
+sourceSets {
+    main {
+        resources {
+            srcDir  'src/main/java'
+            exclude 'src/main/java/**/*.java'
+        }
+    }
+}
 

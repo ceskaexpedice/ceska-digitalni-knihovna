@@ -26,9 +26,7 @@ public class RemoveLemmatizedFields implements ProcessSOLRXML {
             }
         });
 
-        elements1.stream().forEach(toRemove ->{
-            toRemove.getParentNode().removeChild(toRemove);
-        });
+        for (Element toRemove :  elements1) {  toRemove.getParentNode().removeChild(toRemove); }
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         XMLUtils.print(document, bos);
