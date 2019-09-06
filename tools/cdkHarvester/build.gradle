@@ -5,6 +5,7 @@ apply plugin: 'eclipse'
 // disabled command line tool
 //apply plugin: 'application'
 
+group = "org.cdk.tools"
 version = 1.4
 
  repositories {
