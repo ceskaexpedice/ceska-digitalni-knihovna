@@ -36,7 +36,7 @@
                         </xsl:when>
                         <xsl:otherwise>
                             <xsl:variable name="_pid"><xsl:value-of select="./str[@name='PID']"/></xsl:variable>
-                            <xsl:value-of select="concat($solr_url,'/',translate($_pid, ':', '_'))"/>
+                            <xsl:value-of select="concat($solr_url,'/',translate(translate($_pid, ':', '_'),'/','-'))"/>
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>

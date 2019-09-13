@@ -25,8 +25,12 @@ public class FilesUtils {
         if (!folder.exists()) {
             folder.mkdirs();
         }
+        String replaced = pid.replace(":", "_");
+        if (replaced.contains("/@")) {
+            replaced = replaced.replaceAll("/@", "-@");
+        }
 
-        File f = new File(folder, pid.replace(":","_"));
+        File f = new File(folder, replaced);
         LOGGER.info("preparing file :"+f.getAbsolutePath());
         if (!f.exists()) {
             f.createNewFile();

@@ -40,7 +40,12 @@ public class ZipIteration  {
 
         @Override
         public String disect(String name) {
-            return name.substring("solrxml/".length(),name.length()-".foxml".length()).replace('_', ':');
+            if (name.contains("@")) {
+                return name.substring("solrxml/".length(),name.length()-".foxml".length()).replace('_', ':').replaceAll("-@","/@");
+            } else {
+                return name.substring("solrxml/".length(),name.length()-".foxml".length()).replace('_', ':');
+
+            }
         }
 
     }

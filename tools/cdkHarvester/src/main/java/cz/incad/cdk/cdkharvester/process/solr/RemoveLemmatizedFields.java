@@ -1,12 +1,14 @@
 package cz.incad.cdk.cdkharvester.process.solr;
 
 import cz.incad.kramerius.utils.XMLUtils;
+import cz.incad.kramerius.utils.conf.KConfiguration;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.transform.TransformerException;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 
 public class RemoveLemmatizedFields implements ProcessSOLRXML {
@@ -19,7 +21,26 @@ public class RemoveLemmatizedFields implements ProcessSOLRXML {
             @Override
             public boolean acceptElement(Element element) {
                 String name = element.getAttribute("name");
-                if (name.contains("_lemmatized")) {
+                List list = KConfiguration.getInstance().getConfiguration().getList("cdk.prepareSOLRXML.skipfields", Arrays.asList(
+                            "root_title_lemmatized",
+                            "root_title_lemmatized_ascii",
+                            "root_title_lemmatized_nostopwords",
+
+                            "title",
+                            "title_lemmatized",
+                            "title_lemmatized_ascii",
+                            "title_lemmatized_nostopwords",
+
+                            "text_ocr_lemmatized",
+                            "text_ocr_lemmatized_ascii",
+                            "text_ocr_lemmatized_nostopwords",
+
+                            "search_title",
+                            "facet_autor",
+                            "search_autor"
+                        ));
+
+                if (list.contains(name)) {
                     return true;
                 } else return false;
             }

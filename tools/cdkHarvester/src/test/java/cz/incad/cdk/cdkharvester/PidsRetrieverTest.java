@@ -20,13 +20,13 @@ import junit.framework.TestCase;
 
 public class PidsRetrieverTest extends TestCase {
 
-	public void testRetriever() throws Exception {
-		PidsRetriever retriever = EasyMock.createMockBuilder(PidsRetriever.class)
+    public void testRetriever() throws Exception {
+        PidsRetriever retriever = EasyMock.createMockBuilder(PidsRetriever.class)
         .withConstructor("1900-01-01T00:00:00.002Z","http://localhost:8080/search","krameriusAdmin","krameriusAdmin","")
         .addMockedMethod("solrResults")
         .createMock();
 
-		
+
         EasyMock.expect(retriever.solrResults("http://localhost:8080/search/api/v4.6/cdk/prepare?rows=500&date=1900-01-01T00:00:00.002Z")).andReturn(XMLUtils.parseDocument(PidsRetrieverTest.class.getResourceAsStream("pidsretrieve1.xml"))).anyTimes();
         EasyMock.expect(retriever.solrResults("http://localhost:8080/search/api/v4.6/cdk/prepare?rows=500&date=2016-10-13T12:43:03.105Z")).andReturn(XMLUtils.parseDocument(PidsRetrieverTest.class.getResourceAsStream("pidsretrieve2.xml"))).anyTimes();
         EasyMock.expect(retriever.solrResults("http://localhost:8080/search/api/v4.6/cdk/prepare?rows=500&date=2016-10-23T18:43:51.311Z")).andReturn(XMLUtils.parseDocument(PidsRetrieverTest.class.getResourceAsStream("pidsretrieve3.xml"))).anyTimes();
@@ -37,13 +37,13 @@ public class PidsRetrieverTest extends TestCase {
         while (retriever.hasNext()) {
             Map.Entry<String, String> entry = retriever.next();
             if (entry.getValue() != null) {
-            	Assert.assertNotNull(entry.getKey());
-            	Assert.assertNotNull(entry.getValue());
-            	counter +=1;
+                Assert.assertNotNull(entry.getKey());
+                Assert.assertNotNull(entry.getValue());
+                counter +=1;
             }
         }
-        Assert.assertTrue(counter == 1184);
-	}
+        Assert.assertTrue(counter == 1185);
+    }
 
     public void testRetriever2() throws Exception {
         PidsRetriever retriever = EasyMock.createMockBuilder(PidsRetriever.class)
@@ -67,6 +67,6 @@ public class PidsRetrieverTest extends TestCase {
                 counter +=1;
             }
         }
-        Assert.assertTrue(counter == 7);
+        Assert.assertTrue(counter == 8);
     }
 }

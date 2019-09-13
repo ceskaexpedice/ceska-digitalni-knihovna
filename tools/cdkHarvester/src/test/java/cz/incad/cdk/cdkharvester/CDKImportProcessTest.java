@@ -248,6 +248,9 @@ public class CDKImportProcessTest extends TestCase {
             @Override
             public void onIterate(String name, String pid, ZipInputStream zipStream) throws IOException {
                 String changedPid = pid.replace(':','_');
+                if (changedPid.contains("@")) {
+                    changedPid = changedPid.replace('/','-');
+                }
                 File f = new File(tmpDir, changedPid);
                 f.createNewFile();
 
