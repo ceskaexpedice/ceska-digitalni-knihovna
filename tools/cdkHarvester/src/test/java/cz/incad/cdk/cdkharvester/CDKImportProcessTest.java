@@ -16,7 +16,7 @@ import java.util.zip.ZipInputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import cz.incad.cdk.cdkharvester.process.solr.RemoveLemmatizedFields;
+import cz.incad.cdk.cdkharvester.process.solr.RemoveLemmatizedAndChangePidFields;
 import cz.incad.cdk.cdkharvester.utils.FilesUtils;
 import org.apache.commons.collections.map.HashedMap;
 import org.easymock.EasyMock;
@@ -72,7 +72,7 @@ public class CDKImportProcessTest extends TestCase {
 
 
         CDKImportProcess p = EasyMock.createMockBuilder(CDKImportProcess.class).addMockedMethod("getPidsRetriever")
-                .withConstructor(Arrays.asList(imgProcess), Arrays.asList(new RemoveLemmatizedFields()))
+                .withConstructor(Arrays.asList(imgProcess), Arrays.asList(new RemoveLemmatizedAndChangePidFields()))
                 .addMockedMethod("foxml")
                 .addMockedMethod("solrxml")
 
@@ -91,7 +91,7 @@ public class CDKImportProcessTest extends TestCase {
                 .createMock();
 
 
-        EasyMock.expect(p.pidExists(EasyMock.isA(String.class))).andAnswer(new IAnswer<Boolean>() {
+        EasyMock.expect(p.pidExists(EasyMock.isA(String.class), EasyMock.anyObject())).andAnswer(new IAnswer<Boolean>() {
             Map<String, Integer> memory = new HashedMap();
             @Override
             public Boolean answer() throws Throwable {
@@ -132,7 +132,7 @@ public class CDKImportProcessTest extends TestCase {
         // set for test variable
         p.getTransformer().setParameter("_for_tests", true);
 
-        p.getDocs("1900-01-01T00:00:00.002Z", null);
+        p.getDocs("knav","1900-01-01T00:00:00.002Z", null);
     }
 
     // delegated and processed
@@ -180,7 +180,7 @@ public class CDKImportProcessTest extends TestCase {
         ImageReplaceProcess delegator = new ImageReplaceProcess() {
 
             @Override
-            public byte[] process(String url, String pid, InputStream is) throws Exception {
+            public byte[] process(String name, String url, String pid, InputStream is) throws Exception {
                 throw new UnsupportedOperationException("this is unsupported");
             }
 

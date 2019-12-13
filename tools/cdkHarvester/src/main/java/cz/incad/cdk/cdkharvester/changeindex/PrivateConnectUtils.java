@@ -1,10 +1,8 @@
 package cz.incad.cdk.cdkharvester.changeindex;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.util.List;
 
 import javax.ws.rs.core.MediaType;
@@ -12,11 +10,7 @@ import javax.ws.rs.core.MediaType;
 import org.json.JSONObject;
 
 import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.ClientResponse.Status;
-
-import cz.incad.kramerius.utils.conf.KConfiguration;
 
 public class PrivateConnectUtils {
 
@@ -69,7 +63,7 @@ public class PrivateConnectUtils {
             System.out.println("Exists ");
             if (ResultsUtils.collectionExists(results)) {
                 System.out.println(" collection exists ");
-                List<String> disectCollections = ResultsUtils.disectCollections(results);
+                List<String> disectCollections = ResultsUtils.dissectCollections(results);
                 System.out.println(" Disect collections "+disectCollections);
             }
         } else {
@@ -81,6 +75,6 @@ public class PrivateConnectUtils {
     // TODO:Move
     public static List<String> disectCollections(String solrEndpoint, String pid) throws UnsupportedEncodingException, URISyntaxException {
         JSONObject findDoc = findDoc(solrEndpoint, pid);
-        return ResultsUtils.disectCollections(findDoc);
+        return ResultsUtils.dissectCollections(findDoc);
     }
 }

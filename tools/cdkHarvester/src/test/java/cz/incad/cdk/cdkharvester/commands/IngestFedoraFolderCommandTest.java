@@ -2,11 +2,15 @@ package cz.incad.cdk.cdkharvester.commands;
 
 import cz.incad.cdk.cdkharvester.ZipIteration;
 import cz.incad.cdk.cdkharvester.utils.FilesUtils;
+import cz.incad.kramerius.fedora.om.RepositoryException;
 import cz.incad.kramerius.utils.IOUtils;
+import cz.incad.kramerius.utils.pid.LexerException;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.easymock.EasyMock;
 
+import javax.xml.bind.JAXBException;
+import javax.xml.transform.TransformerException;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +33,7 @@ public class IngestFedoraFolderCommandTest extends TestCase {
         FilesUtils.deleteFolder(this.tempDir);
     }
 
-    public void testIngestFolderCommandTest() throws IOException {
+    public void testIngestFolderCommandTest() throws IOException, RepositoryException, LexerException, JAXBException, TransformerException {
         List<String> processedPids = new ArrayList<String>();
         IngestFedoraFolderCommand p = EasyMock.createMockBuilder(IngestFedoraFolderCommand.class)
                 .withConstructor()
@@ -45,7 +49,7 @@ public class IngestFedoraFolderCommandTest extends TestCase {
         Assert.assertTrue(processedPids.size() == 71);
     }
 
-    public void testSkipFolderCommandTest() throws IOException {
+    public void testSkipFolderCommandTest() throws IOException, RepositoryException, LexerException, JAXBException, TransformerException {
         List<String> processedPids = new ArrayList<String>();
         IngestFedoraFolderCommand p = EasyMock.createMockBuilder(IngestFedoraFolderCommand.class)
                 .withConstructor()
@@ -62,9 +66,6 @@ public class IngestFedoraFolderCommandTest extends TestCase {
     }
 
     private IngestFedoraFolderCommand ingestFedorFolderDelegator(final List<String> list) {
-
-
-
         IngestFedoraFolderCommand delegator = new IngestFedoraFolderCommand() {
             @Override
             protected void ingest(String pid, InputStream is) throws IOException {
@@ -72,7 +73,6 @@ public class IngestFedoraFolderCommandTest extends TestCase {
             }
 
         };
-
         return delegator;
     }
 

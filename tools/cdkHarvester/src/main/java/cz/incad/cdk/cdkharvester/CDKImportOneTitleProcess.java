@@ -9,7 +9,7 @@ import cz.incad.cdk.cdkharvester.process.foxml.ProcessFOXML;
 import cz.incad.cdk.cdkharvester.utils.FilesUtils;
 import cz.incad.kramerius.processes.annotations.ParameterName;
 import cz.incad.kramerius.processes.annotations.Process;
-import cz.incad.kramerius.processes.impl.ProcessStarter;
+import cz.incad.kramerius.processes.starter.ProcessStarter;
 import cz.incad.kramerius.utils.conf.KConfiguration;
 import org.kramerius.Import;
 
@@ -67,19 +67,19 @@ public class CDKImportOneTitleProcess extends AbstractCDKSourceHarvestProcess {
         initTransformations();
 
         Import.initialize(KConfiguration.getInstance().getProperty("ingest.user"),KConfiguration.getInstance().getProperty("ingest.password"));
-        processDocs(pid);
+        processDocs(name, pid);
 
         LOGGER.log(Level.INFO, "Finished. ");
     }
 
 
-    private void processDocs(String pid) throws CDKHarvestIterationException, ParseException {
+    private void processDocs(String name, String pid) throws CDKHarvestIterationException, ParseException {
         try {
             CDKHarvestIteration iteration = iteration(pid);
             while(iteration.hasNext()) {
                 CDKHarvestIterationItem next = iteration.next();
                 String iteratingPid = next.getPid();
-                replicate(iteratingPid, true);
+                replicate(name, iteratingPid, true);
                 if (processed % this.getBatchModeSize() == 0) {
                     // import all from batch
                     processBatches();

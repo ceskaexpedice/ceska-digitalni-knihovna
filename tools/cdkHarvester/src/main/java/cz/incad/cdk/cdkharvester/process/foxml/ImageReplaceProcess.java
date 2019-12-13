@@ -64,7 +64,7 @@ public class ImageReplaceProcess implements ProcessFOXML {
      * java.lang.String, java.io.InputStream)
      */
     @Override
-    public byte[] process(final String url, final String pid, InputStream is) throws Exception {
+    public byte[] process(String name, final String url, final String pid, InputStream is) throws Exception {
         if (is == null) return null;
         Document document = XMLUtils.parseDocument(is, true);
         Element docElement = document.getDocumentElement();

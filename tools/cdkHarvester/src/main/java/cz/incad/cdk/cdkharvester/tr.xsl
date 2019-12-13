@@ -32,11 +32,13 @@
                 <xsl:variable name="search_url">
                     <xsl:choose>
                         <xsl:when test="_for_tests">
-                            <xsl:value-of select="concat($solr_url,'?q=PID:',exts:encode($xslfunctions, $query))" />
-                        </xsl:when>
-                        <xsl:otherwise>
+
                             <xsl:variable name="_pid"><xsl:value-of select="./str[@name='PID']"/></xsl:variable>
                             <xsl:value-of select="concat($solr_url,'/',translate(translate($_pid, ':', '_'),'/','-'))"/>
+
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:value-of select="concat($solr_url,'?q=PID:',exts:encode($xslfunctions, $query), '&amp;wt=xml')" />
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>

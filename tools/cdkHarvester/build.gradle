@@ -6,7 +6,7 @@ apply plugin: 'eclipse'
 //apply plugin: 'application'
 
 group = "org.cdk.tools"
-version = "5.4.2.1_cdk"
+version = "7.0.0-beta1_cdk"
 
  repositories {
             /*
@@ -85,14 +85,16 @@ version = "5.4.2.1_cdk"
         }
     // ~ overwritten windows encoding
 
-sourceCompatibility = '1.7'
-targetCompatibility= '1.7'
+sourceCompatibility = '1.8'
+targetCompatibility= '1.8'
+
 
 
 dependencies {
-   compile group: 'cz.incad.kramerius', name: 'common', version: '5.+'
-   compile group: 'cz.incad.kramerius', name: 'import', version: '5.+'
-   compile group: 'cz.incad.kramerius', name: 'import-cmdtool', version: '5.+'
+    compile group: 'cz.incad.kramerius', name: 'bridge', version: '7.+'
+   compile group: 'cz.incad.kramerius', name: 'common', version: '7.*'
+   compile group: 'cz.incad.kramerius', name: 'import', version: '7.+'
+   compile group: 'cz.incad.kramerius', name: 'import-cmdtool', version: '7.+'
    testCompile "org.easymock:easymock:3.0"
    testCompile "junit:junit:3.8.1"
 }

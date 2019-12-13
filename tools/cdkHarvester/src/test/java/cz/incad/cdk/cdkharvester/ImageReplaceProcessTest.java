@@ -36,7 +36,7 @@ public class ImageReplaceProcessTest extends TestCase  {
 		
 		EasyMock.replay(imgProcess);
 
-		byte[] processed = imgProcess.process("http://localhost:8080/search", "uuid:3450c8a6-1327-46f5-8b31-15f46dc23152", new ByteArrayInputStream(bos.toByteArray()));
+		byte[] processed = imgProcess.process(null, "http://localhost:8080/search", "uuid:3450c8a6-1327-46f5-8b31-15f46dc23152", new ByteArrayInputStream(bos.toByteArray()));
 		// IMG_THUMB must be the same 
 		Document processedDoc = XMLUtils.parseDocument(new ByteArrayInputStream(processed), true);
 		Element foundElement = XMLUtils.findElement(processedDoc.getDocumentElement(), new XMLUtils.ElementsFilter() {

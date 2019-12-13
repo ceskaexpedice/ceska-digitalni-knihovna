@@ -1,6 +1,7 @@
 package cz.incad.cdk.cdkharvester.commands;
 
 import cz.incad.kramerius.utils.IOUtils;
+import cz.incad.kramerius.utils.XMLUtils;
 import cz.incad.kramerius.utils.conf.KConfiguration;
 
 import java.io.*;

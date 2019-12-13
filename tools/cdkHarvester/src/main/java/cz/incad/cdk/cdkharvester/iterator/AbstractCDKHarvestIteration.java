@@ -1,6 +1,6 @@
 package cz.incad.cdk.cdkharvester.iterator;
 
-import org.kramerius.replications.BasicAuthenticationClientFilter;
+import cz.incad.kramerius.utils.BasicAuthenticationClientFilter;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;

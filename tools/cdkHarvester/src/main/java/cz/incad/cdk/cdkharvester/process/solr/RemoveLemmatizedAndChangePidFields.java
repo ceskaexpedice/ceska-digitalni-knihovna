@@ -11,12 +11,12 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
-public class RemoveLemmatizedFields implements ProcessSOLRXML {
+public class RemoveLemmatizedAndChangePidFields implements ProcessSOLRXML {
 
     @Override
-    public byte[] process(String url, String pid, InputStream is) throws Exception {
+    public byte[] process(String name, String url, String pid, InputStream is) throws Exception {
         Document document = XMLUtils.parseDocument(is, false);
-        Element doc = XMLUtils.findElement(XMLUtils.findElement(document.getDocumentElement(), "result"), "doc");
+        Element doc = XMLUtils.findElement(document.getDocumentElement(),  "doc");
         List<Element> elements1 = XMLUtils.getElements(doc, new XMLUtils.ElementsFilter() {
             @Override
             public boolean acceptElement(Element element) {
@@ -26,7 +26,6 @@ public class RemoveLemmatizedFields implements ProcessSOLRXML {
                             "root_title_lemmatized_ascii",
                             "root_title_lemmatized_nostopwords",
 
-                            "title",
                             "title_lemmatized",
                             "title_lemmatized_ascii",
                             "title_lemmatized_nostopwords",
@@ -47,6 +46,8 @@ public class RemoveLemmatizedFields implements ProcessSOLRXML {
         });
 
         for (Element toRemove :  elements1) {  toRemove.getParentNode().removeChild(toRemove); }
+
+
 
         document.normalize();
 

@@ -16,14 +16,20 @@
  */
 package cz.incad.cdk.cdkharvester;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 
 import cz.incad.cdk.cdkharvester.process.foxml.ImageReplaceProcess;
 import cz.incad.cdk.cdkharvester.process.foxml.ProcessFOXML;
 import cz.incad.cdk.cdkharvester.process.solr.ProcessSOLRXML;
-import cz.incad.cdk.cdkharvester.process.solr.RemoveLemmatizedFields;
+import cz.incad.cdk.cdkharvester.process.solr.RemoveLemmatizedAndChangePidFields;
 import cz.incad.cdk.cdkharvester.utils.FilesUtils;
+import cz.incad.kramerius.FedoraAccess;
+import cz.incad.kramerius.fedora.RepoModule;
 import cz.incad.kramerius.processes.States;
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +38,11 @@ import java.util.logging.Level;
 
 import cz.incad.kramerius.processes.annotations.ParameterName;
 import cz.incad.kramerius.processes.annotations.Process;
-import cz.incad.kramerius.processes.impl.ProcessStarter;
+import cz.incad.kramerius.processes.starter.ProcessStarter;
+import cz.incad.kramerius.resourceindex.ResourceIndexModule;
+import cz.incad.kramerius.solr.SolrModule;
+import cz.incad.kramerius.statistics.NullStatisticsModule;
+import cz.incad.kramerius.utils.BasicAuthenticationClientFilter;
 import cz.incad.kramerius.utils.conf.KConfiguration;
 
 import java.io.BufferedReader;
@@ -46,6 +56,7 @@ import javax.ws.rs.core.MediaType;
 
 import net.sf.json.JSONObject;
 import org.kramerius.Import;
+import org.kramerius.ImportModule;
 import org.kramerius.replications.*;
 
 /**
@@ -66,11 +77,6 @@ public class CDKImportProcess extends AbstractCDKSourceHarvestProcess {
     private String uuidFile = "cdkimport.uuid";
     private String harvestUrl;
 
-    //private String dateLimit;
-
-    //protected Configuration config;
-
-
     /**
      * @throws IOException 
      * 
@@ -78,7 +84,7 @@ public class CDKImportProcess extends AbstractCDKSourceHarvestProcess {
     public CDKImportProcess() throws IOException {
         super();
         this.foxmlProcessingChain.add(new ImageReplaceProcess());
-        this.solrProcessingChain.add(new RemoveLemmatizedFields());
+        this.solrProcessingChain.add(new RemoveLemmatizedAndChangePidFields());
     }
 
     public CDKImportProcess(List<ProcessFOXML> foxmlProcessChain, List<ProcessSOLRXML> solrProcessChain) {
@@ -93,7 +99,6 @@ public class CDKImportProcess extends AbstractCDKSourceHarvestProcess {
             @ParameterName("pswd") String pswd,@ParameterName("dateLimit") String dateLimit) throws Exception {
 
         ProcessStarter.updateName("Import CDK from " + name);
-
         CDKImportProcess p = new CDKImportProcess();
         p.start(url, name, collectionPid, userName, pswd, dateLimit);
     }
@@ -145,10 +150,10 @@ public class CDKImportProcess extends AbstractCDKSourceHarvestProcess {
 
 
     public void setCollectionPid(String collectionPid) {
-		this.collectionPid = collectionPid;
-	}
+        this.collectionPid = collectionPid;
+    }
 
-	//TODO: Rewrite it
+    //TODO: Rewrite it
     public void start(String url, String name, String collectionPid, String userName, String pswd, String dateLimit) throws Exception {
 
 
@@ -177,20 +182,20 @@ public class CDKImportProcess extends AbstractCDKSourceHarvestProcess {
 
         total = 0;
         Import.initialize(KConfiguration.getInstance().getProperty("ingest.user"),KConfiguration.getInstance().getProperty("ingest.password"));
-        getDocs(from,dateLimit);
+        getDocs(name, from,dateLimit);
 
         logger.log(Level.INFO, "Finished. Total documents processed: {0}", total);
+        System.exit(0);
     }
 
 
-    protected void getDocs(String date, String dateLimit) throws Exception {
+    protected void getDocs(String name, String date, String dateLimit) throws Exception {
         PidsRetriever dr = getPidsRetriever(date, dateLimit);
         while (dr.hasNext()) {
             Map.Entry<String, String> entry = dr.next();
-            replicate(entry.getKey(),false);
+            replicate(name, entry.getKey(),false);
             if (entry.getValue() != null) {
                 writeUpdateTime(entry.getValue());
-
                 processed++;
             }
             if (processed % this.getBatchModeSize() == 0) {
@@ -204,18 +209,7 @@ public class CDKImportProcess extends AbstractCDKSourceHarvestProcess {
     }
 
     protected PidsRetriever getPidsRetriever(String date, String dateLimit) throws ParseException {
-		return new PidsRetriever(date, k4Url, userName, pswd, dateLimit);
+        return new PidsRetriever(date, k4Url, userName, pswd, dateLimit);
     }
-
-
-//    public static String reducePid(String pid) {
-//		// page pid
-//    	if (pid.contains("/@")) {
-//    		pid = pid.replace("/@", "@");
-//    	}
-//		return pid;
-//	}
-    // change collection
-
 
 }

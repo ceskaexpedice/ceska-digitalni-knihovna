@@ -46,7 +46,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 /**
- *
+ * TODO: Rewrite it
  * @author alberto
  */
 public class PidsRetriever {
@@ -160,19 +160,6 @@ public class PidsRetriever {
         	IOUtils.tryClose(is);
         }
 	}
-	
-	/*
-	private WebResource client(String urlStr) {
-		Client c = Client.create();
-        // follow redirect
-        c.getProperties().put(
-                ClientConfig.PROPERTY_FOLLOW_REDIRECTS, true);
-        c.setConnectTimeout(2000);
-        c.setReadTimeout(20000);
-        WebResource r = c.resource(urlStr);
-        r.addFilter(new BasicAuthenticationClientFilter(userName, pswd));
-		return r;
-	}*/
 
     final class DocEntry<K, V> implements Map.Entry<K, V> {
 
