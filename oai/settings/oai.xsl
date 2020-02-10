@@ -28,6 +28,7 @@
     <!-- Setup Kramerius location variables -->
     <xsl:variable name="kramerius_url">http://localhost:8080/search/</xsl:variable>
     <xsl:variable name="api_point">api/v5.0/</xsl:variable>
+    <xsl:variable name="oai_prefix">oai:kramerius.example.com:</xsl:variable>
 	
 	
 
