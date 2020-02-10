@@ -287,8 +287,43 @@ public class XMLUtils {
             return null;
         }
     }
-
-
+    
+    /**
+     * Finds element in DOM tree
+     * @param topElm Root node
+     * @param localName Local element name
+     * @param textContent Text content of desired element
+     * @param namespace Element namespace
+     * @return found element
+     */
+    public static Element findElement(Element topElm, String localName, String textContent, String namespace) {
+        if (topElm == null) throw new IllegalArgumentException("topElm cannot be null");
+        synchronized(topElm.getOwnerDocument()) {
+            Stack<Element> stack = new Stack<Element>();
+            stack.push(topElm);
+            while (!stack.isEmpty()) {
+                Element curElm = stack.pop();
+                if ((curElm.getLocalName().equals(localName)) && (curElm.getTextContent().equals(textContent)) && (namespacesAreSame(curElm.getNamespaceURI(), namespace))) {
+                    return curElm;
+                }
+                List<Node> nodesToProcess = new ArrayList<Node>();
+                NodeList childNodes = curElm.getChildNodes();
+                for (int i = 0, ll = childNodes.getLength(); i < ll; i++) {
+                    Node item = childNodes.item(i);
+                    if (item.getNodeType() == Node.ELEMENT_NODE) {
+                        nodesToProcess.add(item);
+                    }
+                }
+                // because of stack
+                Collections.reverse(nodesToProcess);
+                for (Node node : nodesToProcess) {
+                    stack.push((Element) node);
+                    
+                }
+            }
+            return null;
+        }
+    }
     
     public static Element findElement(Element topElm, ElementsFilter filter) {
         if (topElm == null) throw new IllegalArgumentException("topElm cannot be null");
@@ -319,7 +354,81 @@ public class XMLUtils {
         }
     }
     
+    /**
+     * Finds elements in DOM tree
+     * @param topElm Root node
+     * @param localName Local element name
+     * @param namespace Element namespace
+     * @return found elements
+     */
+    public static List<Element> findElements (Element topElm, String localName, String namespace) {
+        if (topElm == null) throw new IllegalArgumentException("topElm cannot be null");
+        synchronized(topElm.getOwnerDocument()) {
+            Stack<Element> stack = new Stack<Element>();
+            List<Element> elms = new ArrayList<Element>();
+            stack.push(topElm);
+            while (!stack.isEmpty()) {
+                Element curElm = stack.pop();
+                if ((curElm.getLocalName().equals(localName)) && (namespacesAreSame(curElm.getNamespaceURI(), namespace))) {
+                    elms.add(curElm);
+                }
+                List<Node> nodesToProcess = new ArrayList<Node>();
+                NodeList childNodes = curElm.getChildNodes();
+                for (int i = 0, ll = childNodes.getLength(); i < ll; i++) {
+                    Node item = childNodes.item(i);
+                    if (item.getNodeType() == Node.ELEMENT_NODE) {
+                        nodesToProcess.add(item);
+                    }
+                }
+                // because of stack
+                Collections.reverse(nodesToProcess);
+                for (Node node : nodesToProcess) {
+                    stack.push((Element) node);
+                    
+                }
+            }
+            return elms;
+        }
+    }
     
+    /**
+     * Finds elements in DOM tree
+     * @param topElm Root node
+     * @param localName Local element name
+     * @param attribute Name of attribute
+     * @param namespace Element namespace
+     * @return found elements
+     */
+    public static List<Element> findElements (Element topElm, String localName, String attribute, String namespace) {
+        if (topElm == null) throw new IllegalArgumentException("topElm cannot be null");
+        synchronized(topElm.getOwnerDocument()) {
+            Stack<Element> stack = new Stack<Element>();
+            List<Element> elms = new ArrayList<Element>();
+            stack.push(topElm);
+            while (!stack.isEmpty()) {
+                Element curElm = stack.pop();
+                if (curElm.getLocalName().equals(localName) && curElm.hasAttribute(attribute) && (namespacesAreSame(curElm.getNamespaceURI(), namespace))) {
+                    elms.add(curElm);
+                }
+                List<Node> nodesToProcess = new ArrayList<Node>();
+                NodeList childNodes = curElm.getChildNodes();
+                for (int i = 0, ll = childNodes.getLength(); i < ll; i++) {
+                    Node item = childNodes.item(i);
+                    if (item.getNodeType() == Node.ELEMENT_NODE) {
+                        nodesToProcess.add(item);
+                    }
+                }
+                // because of stack
+                Collections.reverse(nodesToProcess);
+                for (Node node : nodesToProcess) {
+                    stack.push((Element) node);
+                    
+                }
+            }
+            return elms;
+        }
+    }
+
     /**
      * Serialize W3C document into given output stream
      * @param doc W3C document

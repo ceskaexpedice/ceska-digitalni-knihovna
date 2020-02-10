@@ -100,8 +100,15 @@ public class Utils {
 		}
 		return false;
 	}
+        
+        public static boolean matchPolicy(JSONObject itemJSON, String expectingPolicy) {
+		String policy = itemJSON.getString("policy");
+                if (policy.equals(expectingPolicy)) {
+                    return true;
+                }
+		return false;
+	}
 
-	
 	public static JSONArray selectContext(JSONObject obj) {
 		return obj.getJSONArray("context");
 	}

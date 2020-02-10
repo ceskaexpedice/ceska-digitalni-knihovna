@@ -47,7 +47,11 @@ import cz.incad.kramerius.utils.OAIMWUtils;
 import cz.incad.kramerius.utils.OAISolrAccess;
 import cz.incad.kramerius.utils.XMLUtils;
 import cz.incad.kramerius.utils.conf.KConfiguration;
+import org.json.JSONArray;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
+import java.util.Map;
+import java.util.HashMap;
 
 public class PeriodicalProvideServlet extends HttpServlet {
 
@@ -62,10 +66,10 @@ public class PeriodicalProvideServlet extends HttpServlet {
 	public static final String CDK_CLIENT_LOCATION = "https://cdk.lib.cas.cz/client/%s";
 	
 	/** handle for detecting uuid */
-       public static final String HANDLE_REPLACEMENT = "https://cdk.lib.cas.cz/client/handle/";
-
+        public static final String HANDLE_REPLACEMENT = "https://cdk.lib.cas.cz/client/handle/";
 	
 	
+        
 	private static String getPid(HttpServletRequest req) {
 		return req.getParameter("pid");
 	}
@@ -93,7 +97,7 @@ public class PeriodicalProvideServlet extends HttpServlet {
                         Boolean duplicate = false; 
                         for (int i = 0; i < nodeList.getLength(); i++) { 
                             Element uuidOri = (Element)nodeList.item(i);
-                            String uuidOriText = uuidOri.getTextContent();;
+                            String uuidOriText = uuidOri.getTextContent();
                             
                             if (uuidOriText.equals(HANDLE_REPLACEMENT+cnt)) {
                                 duplicate = true;
@@ -130,6 +134,20 @@ public class PeriodicalProvideServlet extends HttpServlet {
 		Actions act = Actions.valueOf(action);
 		act.perform(this.fa, this.sa, this.jsonCache, this.dcCache, req, resp);
 	}
+        
+        private static boolean isInCollection(JSONObject itemJSON, String collection) {
+            if (itemJSON.has("collections")) {
+                JSONArray collections = itemJSON.getJSONArray("collections");
+                int length = collections.length();
+                for (int i = 0; i < length; i++) {
+                    if (collections.get(i).toString().equals(collection)) {
+                        return true;
+                    }
+                }
+                
+            }
+            return false;
+        }
 
 	public enum Actions {
 		europeana {
@@ -143,39 +161,77 @@ public class PeriodicalProvideServlet extends HttpServlet {
 						factory.setNamespaceAware(true);
 						DocumentBuilder builder = factory.newDocumentBuilder();
 						Document europeana = builder.newDocument();
-						Element root = europeana.createElementNS("http://www.europeana.eu/schemas/ese/","europeana:record");
+						Element root = europeana.createElementNS("http://www.europeana.eu/schemas/edm/", "edm:record");
 						root.setAttribute("xmlns:rdf",FedoraNamespaces.RDF_NAMESPACE_URI);
 						europeana.appendChild(root);
+                                                
+                                                String formattedURL = String.format(PeriodicalProvideServlet.CDK_LOCATION, "handle/"+pid);
 
+						Element elementShownAt = europeana.createElementNS("http://www.europeana.eu/schemas/edm/","edm:isShownAt");
+						elementShownAt.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", formattedURL);
+						root.appendChild(elementShownAt);
+                                                
 						JSONObject itemJSON = jsonCache.get(pid);
-						if (itemJSON.has("pdf")) {
+
+						if (itemJSON.has("pdf") && matchPolicy(itemJSON, "public")) {
 							JSONObject pdfObject = itemJSON.getJSONObject("pdf");
 							if (pdfObject.has("url")) {
 								String url = pdfObject.getString("url");
-								Element elementShownBy = europeana.createElementNS("http://www.europeana.eu/schemas/ese/","europeana:isShownBy");
-								elementShownBy.setTextContent(url);
+								Element elementShownBy = europeana.createElementNS("http://www.europeana.eu/schemas/edm/","edm:isShownBy");
+								elementShownBy.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", url);
 								root.appendChild(elementShownBy);
 							}
 						}
-
-						String formattedURL = String.format(PeriodicalProvideServlet.CDK_CLIENT_LOCATION, "handle/"+pid);
-
-						Element elementShownAt = europeana.createElementNS("http://www.europeana.eu/schemas/ese/","europeana:isShownAt");
-						elementShownAt.setTextContent(formattedURL);
-						root.appendChild(elementShownAt);
 						
-						boolean allowed = OAIMWUtils.process(fa, sa, pid, null);             
-						if (allowed) {
-							//<edm:rights rdf:resource="http://creativecommons.org/publicdomain/mark/1.0/"/> 
-							Element right = europeana.createElementNS("http://www.europeana.eu/schemas/ese/","europeana:rights");
+						boolean allowed = OAIMWUtils.process(fa, sa, pid, null);    
+                                                
+                                                // vc:c4bb27af-3a51-4ac2-95c7-fd393b489e26 - KNAV
+                                                boolean isKNAV = isInCollection(itemJSON, "vc:c4bb27af-3a51-4ac2-95c7-fd393b489e26");
+                                                
+                                                // For KNAV only use moving wall otherwise decide after policy
+						if (isKNAV) {
+                                                    if (allowed) {
+							Element right = europeana.createElementNS("http://www.europeana.eu/schemas/edm/","edm:rights");
 							right.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", "http://creativecommons.org/publicdomain/mark/1.0/");
-							root.appendChild(right);
-						} else {
-							//<edm:rights rdf:resource="http://rightsstatements.org/vocab/InC-EDU/1.0/"/>
-							Element right = europeana.createElementNS("http://www.europeana.eu/schemas/ese/","europeana:rights");
-							right.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", "http://rightsstatements.org/vocab/InC-EDU/1.0/");
-							root.appendChild(right);
-						}
+							root.appendChild(right); 
+                                                    }
+                                                    else {
+                                                        if (matchPolicy(itemJSON, "public")) {
+                                                            Element right = europeana.createElementNS("http://www.europeana.eu/schemas/edm/","edm:rights");
+                                                            right.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", "http://creativecommons.org/licenses/by-nc-sa/4.0/");
+                                                            root.appendChild(right);  
+                                                        }
+                                                        else {
+                                                            Element right = europeana.createElementNS("http://www.europeana.eu/schemas/edm/","edm:rights");
+                                                            right.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", "http://rightsstatements.org/vocab/InC/1.0/");
+                                                            root.appendChild(right);
+                                                        }  
+                                                    }	
+						} 
+                                                else {
+                                                    if (matchPolicy(itemJSON, "public")) {
+                                                        Element right = europeana.createElementNS("http://www.europeana.eu/schemas/edm/","edm:rights");
+                                                        right.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", "http://creativecommons.org/publicdomain/mark/1.0/");
+                                                        root.appendChild(right);  
+                                                    }
+                                                    else {
+                                                        Element right = europeana.createElementNS("http://www.europeana.eu/schemas/edm/","edm:rights");
+                                                        right.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", "http://rightsstatements.org/vocab/InC/1.0/");
+                                                        root.appendChild(right);
+                                                    } 
+                                                }
+                                                
+                                                String objectUrl = "";
+                                                Element elementObject = europeana.createElementNS("http://www.europeana.eu/schemas/edm/","edm:object");
+                                                
+                                                if (matchPolicy(itemJSON, "public")) {
+                                                    objectUrl = String.format(PeriodicalProvideServlet.CDK_LOCATION, "img?pid=" + pid + "&stream=IMG_FULL&action=TRANSCODE&outputFormat=PNG");
+                                                }
+                                                else {
+                                                    objectUrl = String.format(PeriodicalProvideServlet.CDK_LOCATION, "img?pid=" + pid + "&stream=IMG_THUMB&action=GETRAW");
+                                                }
+						elementObject.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", objectUrl);
+						root.appendChild(elementObject);
 
 						resp.setContentType("text/xml; charset=utf-8");
 						XMLUtils.print(europeana, resp.getWriter());
@@ -210,42 +266,49 @@ public class PeriodicalProvideServlet extends HttpServlet {
 					LanguageDetect langDetect = new LanguageDetectImpl();
 
 					if (pid != null && (!pid.trim().equals(""))) {
-						Document dc = dcCache.get(pid);
-						JSONObject itemJSON = jsonCache.get(pid);
-						// build new title
-						if (matchModel(itemJSON, "periodical")) {
-							String ntitle = TitleParts.buildTitle(jsonCache.getForPath(pid, jsonCache));
+                                            
+                                            Document mods = fa.getBiblioMods(pid);
+                                            Document dc = dcCache.get(pid);
+                                            JSONObject itemJSON = jsonCache.get(pid);
+                                            // build new title
+                                            
+                                             dc = getLangForDescription(dc, mods);
+                                             dc = getLangForTitle(dc, mods);
+                                             
+                                            if (matchModel(itemJSON, "periodical")) {
+                                                String ntitle = TitleParts.buildTitle(jsonCache.getForPath(pid, jsonCache));
 
-							// title
-							Element titleElement = XMLUtils.findElement(dc.getDocumentElement(), "title",
-									"http://purl.org/dc/elements/1.1/");
-							if (titleElement == null) {
-								titleElement = dc.createElementNS("http://purl.org/dc/elements/1.1/", "dc:title");
-								dc.getDocumentElement().appendChild(titleElement);
-							}					
-							titleElement.setTextContent(ntitle);
+                                                // title
+                                                Element titleElement = XMLUtils.findElement(dc.getDocumentElement(), "title",
+                                                            "http://purl.org/dc/elements/1.1/");
+                                                if (titleElement == null) {
+                                                    titleElement = dc.createElementNS("http://purl.org/dc/elements/1.1/", "dc:title");
+                                                    dc.getDocumentElement().appendChild(titleElement);
+                                                    titleElement.setTextContent(ntitle);
+                                                }					
+                                                     
+                                                Element sourceElement = XMLUtils.findElement(dc.getDocumentElement(), "source",
+                                                            "http://purl.org/dc/elements/1.1/");
+                                                     
+                                                if (sourceElement == null) {
+                                                    sourceElement = dc.createElementNS("http://purl.org/dc/elements/1.1/", "dc:source");
+                                                    dc.getDocumentElement().appendChild(sourceElement);
+                                                }
+                                                     sourceElement.setTextContent(ntitle);
 
-							Element langElement = XMLUtils.findElement(dc.getDocumentElement(), "language",
-									"http://purl.org/dc/elements/1.1/");
-							if (langElement == null) {
-								langElement = dc.createElementNS("http://purl.org/dc/elements/1.1/", "dc:language");
-								dc.getDocumentElement().appendChild(langElement);
-							}
-							langElement.setTextContent(
-									langDetect.detectLanguage(dcCache.getForPath(pid, jsonCache)));
+                                                Element langElement = XMLUtils.findElement(dc.getDocumentElement(), "language",
+                                                            "http://purl.org/dc/elements/1.1/");
+                                                if (langElement == null) {
+                                                    langElement = dc.createElementNS("http://purl.org/dc/elements/1.1/", "dc:language");
+                                                    dc.getDocumentElement().appendChild(langElement);
+                                                }
+                                                langElement.setTextContent(
+                                                    langDetect.detectLanguage(dcCache.getForPath(pid, jsonCache)));
+                                             }
 
-							changeIdentifier(dc);
-
-							resp.setContentType("text/xml; charset=utf-8");
-							XMLUtils.print(dc, resp.getWriter());
-						} else {
-							// forward dc
-							changeIdentifier(dc);
-							resp.setContentType("text/xml; charset=utf-8");
-
-							XMLUtils.print(dc, resp.getWriter());
-
-						}
+                                             changeIdentifier(dc);
+                                             resp.setContentType("text/xml; charset=utf-8");
+                                             XMLUtils.print(dc, resp.getWriter()); 
 					}
 				} catch (DOMException e) {
 					LOGGER.log(Level.SEVERE, e.getMessage(), e);
@@ -258,8 +321,291 @@ public class PeriodicalProvideServlet extends HttpServlet {
 					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
 			}
+		},
+                
+                agent {
+			
+			@Override
+			public void perform(FedoraAccess fa, SolrAccess sa, CachedAccessToJson jsonCache,CachedAccessToDC dcCache, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+				try {
+					String pid = getPid(req);                                    
+
+					if (pid != null && (!pid.trim().equals(""))) {
+                                            
+                                            Document mods = fa.getBiblioMods(pid);
+                                            Document dc = dcCache.get(pid);
+                                            JSONObject itemJSON = jsonCache.get(pid);
+                                            // build new title
+                                            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                                            factory.setNamespaceAware(true);
+                                            DocumentBuilder builder = factory.newDocumentBuilder();
+                                            Document agent = builder.newDocument();
+                                            Element root = agent.createElementNS("http://www.europeana.eu/schemas/edm/","edm:record");
+					    root.setAttribute("xmlns:rdf",FedoraNamespaces.RDF_NAMESPACE_URI);
+					    agent.appendChild(root);
+                                            
+                                            Element agents = agent.createElementNS("http://www.europeana.eu/schemas/edm/","edm:agents");
+                                            root.appendChild(agents);
+                                            
+                                            Element creators = agent.createElementNS(FedoraNamespaces.DC_NAMESPACE_URI,"dc:creators");
+                                            root.appendChild(creators);
+                                            
+                                            agent = getCreator(agent, mods, dc);
+                                            
+                                            resp.setContentType("text/xml; charset=utf-8");
+                                            XMLUtils.print(agent, resp.getWriter()); 
+					}
+				} catch (DOMException e) {
+					LOGGER.log(Level.SEVERE, e.getMessage(), e);
+					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				} catch (ExecutionException e) {
+					LOGGER.log(Level.SEVERE, e.getMessage(), e);
+					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				} catch (TransformerException e) {
+					LOGGER.log(Level.SEVERE, e.getMessage(), e);
+					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				} catch (ParserConfigurationException e) {
+                                        LOGGER.log(Level.SEVERE, e.getMessage(), e);
+					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                                }
+			}
 		};
 
 		public abstract void perform(FedoraAccess fa,SolrAccess sa,  CachedAccessToJson jsonCache,CachedAccessToDC dcCache, HttpServletRequest req, HttpServletResponse resp) throws IOException ;
 	}
+        
+        private static Document getLangForTitle(Document dc, Document mods) {
+            List<Element> titleInfoElements = XMLUtils.findElements(mods.getDocumentElement(), "titleInfo", "lang", "http://www.loc.gov/mods/v3");
+
+            for (Element titleInfoElement : titleInfoElements) {
+                String titleInfoParent = titleInfoElement.getParentNode().getLocalName();
+                String lang = titleInfoElement.getAttribute("lang");
+
+                if (!titleInfoParent.equals("mods")) {
+                    continue;
+                }
+                NodeList childNodes = titleInfoElement.getElementsByTagNameNS("http://www.loc.gov/mods/v3", "title");
+                for (int i = 0, ll = childNodes.getLength(); i < ll; i++) {
+                    Element titleElement = (Element)childNodes.item(i);
+                    if (titleElement != null) {
+                        String title = titleElement.getTextContent();
+                        Element titleDCElement = XMLUtils.findElement(dc.getDocumentElement(), "title", title,
+                                    "http://purl.org/dc/elements/1.1/");
+                        if (titleDCElement != null) {
+                            titleDCElement.setAttribute("lang", lang);
+                        }
+                    }
+               }
+            }
+            return dc;
+        }
+        
+        private static Document getLangForDescription(Document dc, Document mods) {
+            List<Element> abstractElements = XMLUtils.findElements(mods.getDocumentElement(), "abstract", "http://www.loc.gov/mods/v3");
+                                        
+            if (abstractElements != null) {                        
+                for (Element abstractElement : abstractElements) {
+                    if (abstractElement.hasAttribute("lang")) {
+                        String lang = abstractElement.getAttribute("lang");
+                        String abstractText = abstractElement.getTextContent();
+                        Element descriptionElement = XMLUtils.findElement(dc.getDocumentElement(), "description", abstractText,
+									"http://purl.org/dc/elements/1.1/");
+                        if (descriptionElement != null) {
+                            descriptionElement.setAttribute("lang", lang);  
+                        }
+                        
+                    }
+                }
+            }
+            return dc;
+        }
+        
+        private static Document getCreator(Document agent, Document mods, Document dc) throws ParserConfigurationException, IOException, TransformerException {
+            List<Element> nameElements = XMLUtils.findElements(mods.getDocumentElement(), "name", "http://www.loc.gov/mods/v3");
+            
+            if (nameElements != null) {
+                for (Element nameElement : nameElements) {
+                    if (nameElement.getParentNode().getLocalName().equals("mods")) {
+                    if (nameElement.hasAttribute("authorityURI") && nameElement.hasAttribute("valueURI")) {
+                        String uri = nameElement.getAttribute("valueURI");;
+                        
+                        Element agentElement = agent.createElementNS("http://www.europeana.eu/schemas/edm/","edm:Agent");
+                        agentElement.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:about", uri);
+                        agent.getDocumentElement().getFirstChild().appendChild(agentElement);
+                        
+                        Map <String, String> record = getNameAndDate(nameElement, true);
+                        String prefLabel = record.get("name");
+                        String date = record.get("date");
+                        
+                        if (!prefLabel.equals("")) {
+                            Element prefLabelElement = agent.createElementNS("http://www.w3.org/2004/02/skos/core#", "skos:prefLabel");
+                            prefLabelElement.setTextContent(prefLabel);
+                            agentElement.appendChild(prefLabelElement);
+                            
+                            Element creator = agent.createElementNS(FedoraNamespaces.DC_NAMESPACE_URI, "dc:creator");
+                            creator.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", uri);
+                            agent.getDocumentElement().getLastChild().appendChild(creator);
+                        }
+                        
+                        if (!date.equals("")) {
+                            Map <String, String> dates  = getDate(date);
+                            String birth = dates.get("birth");
+                            String death = dates.get("death");
+                            
+                            if (!birth.equals("")) {
+                                Element birthElement = agent.createElementNS("http://rdvocab.info/ElementsGr2/", "rdaGr2:dateOfBirth");
+                                birthElement.setTextContent(birth);
+                                agentElement.appendChild(birthElement);
+                            }
+                            if (!death.equals("")) {
+                                Element deathElement = agent.createElementNS("http://rdvocab.info/ElementsGr2/", "rdaGr2:dateOfDeath");
+                                deathElement.setTextContent(death);
+                                agentElement.appendChild(deathElement);
+                            }
+                        }
+                        
+                    }
+                    else {
+                        Map <String, String> record = getNameAndDate(nameElement, false);
+                        String prefLabel = record.get("name");
+                        if (!prefLabel.equals("")) {
+                            Element creator = agent.createElementNS(FedoraNamespaces.DC_NAMESPACE_URI, "dc:creator");
+                            creator.setTextContent(prefLabel);
+                            agent.getDocumentElement().getLastChild().appendChild(creator);
+                        }
+                    }
+                    }
+                }
+            }
+            return agent;
+        }
+        
+        private static Map <String, String> getNameAndDate(Element nameElement, Boolean isForAgent) {
+            String givenName = "";
+            String familyName = "";
+            String date = "";
+            String prefLabel = "";
+            String finalName = "";
+            Map <String, String> record = new HashMap<String, String>();
+            Boolean isCorporate = false;
+            
+            NodeList namePartList = nameElement.getChildNodes();
+
+            if (nameElement.hasAttribute("type")) {
+               String type = nameElement.getAttribute("type");
+               if (type.equals("corporate")) {
+                   isCorporate = true;
+               }
+            }
+            
+            for (int i = 0, ll = namePartList.getLength(); i < ll; i++) {
+                Node namePartNode = namePartList.item(i);
+
+                if (namePartNode.getLocalName() != null  && namePartNode.getLocalName().equals("namePart")) {
+                    Element namePartElement = (Element)namePartNode;
+                    
+                    if (namePartElement.hasAttribute("type")) {
+                        String type = namePartElement.getAttribute("type");
+                        if (type.equals("family")) {
+                            familyName = namePartElement.getTextContent();
+                        }
+                        if (type.equals("given")) {
+                            givenName = namePartElement.getTextContent();
+                        }
+                        if (type.equals("date")) {
+                            date = namePartElement.getTextContent();
+                        }
+                    }
+                    else {
+                        if (prefLabel.equals("")) {
+                            prefLabel = namePartElement.getTextContent();
+                        }
+                        else {
+                            // for <mods:name> which has more elements <mods:namePart> without type
+                            prefLabel = prefLabel + ". " + namePartElement.getTextContent();
+                        }
+                    }
+                }
+            }
+            
+            if (!familyName.equals("") && !givenName.equals("")) {
+                if (isForAgent == true) {
+                    finalName = givenName + " " + familyName;
+                }
+                else {
+                    finalName = familyName + ", " + givenName;
+                } 
+            }
+            else {
+                if (!familyName.equals("")) {
+                    finalName = familyName;
+                }
+                if (!givenName.equals("")) {
+                    finalName = givenName;
+                }
+                if (familyName.equals("") && givenName.equals("")) {
+                    // České vysoké učení technické v Praze || Novak, Jan
+                    if (isCorporate == true || isForAgent == false) {
+                        finalName = prefLabel;
+                    }
+                    // Jan Novak
+                    if (isForAgent == true) {
+                        finalName = parseName(prefLabel);
+                    }
+                }
+            } 
+            record.put("name", finalName);
+            record.put("date", date);
+            
+            return record;
+        }
+        
+        private static Map <String, String> getDate(String date) {
+            int length = date.length();
+            int i = 0;
+            String birth = "";
+            String death = "";
+            Map <String, String> dates = new HashMap<String, String>();
+
+            while (i < length && date.charAt(i) != '-') {
+                birth += date.charAt(i);
+                i++;
+            }
+            i++;
+            while (i < length) {
+                death += date.charAt(i);
+                i++;
+            }
+            
+            dates.put("birth", birth);
+            dates.put("death", death);
+            return dates;
+        }
+        
+        public static String parseName(String name) {
+            String family = "";
+            String given = "";
+            int i = 0;
+            int length = name.length();
+                       
+            while (i < length && name.charAt(i) != ',') {
+                family += name.charAt(i);
+                i++;
+            }
+            i++;
+            while (i < length) {
+                if (name.charAt(i) == ' ' && given.equals("")) {
+                    i++;
+                    continue;
+                }
+                given += name.charAt(i);
+                i++;
+            }
+            
+            if (!given.equals("") && !family.equals("")) {
+                return given + " " + family;
+            }
+            return family;
+        }
+        
 }
