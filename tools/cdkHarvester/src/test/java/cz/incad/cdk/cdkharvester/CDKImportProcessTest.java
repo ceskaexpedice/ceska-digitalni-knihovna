@@ -16,6 +16,7 @@ import java.util.zip.ZipInputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import cz.incad.cdk.cdkharvester.process.foxml.TilesAndReplicatedFromReference;
 import cz.incad.cdk.cdkharvester.process.solr.RemoveLemmatizedFields;
 import cz.incad.cdk.cdkharvester.utils.FilesUtils;
 import org.apache.commons.collections.map.HashedMap;
@@ -72,7 +73,7 @@ public class CDKImportProcessTest extends TestCase {
 
 
         CDKImportProcess p = EasyMock.createMockBuilder(CDKImportProcess.class).addMockedMethod("getPidsRetriever")
-                .withConstructor(Arrays.asList(imgProcess), Arrays.asList(new RemoveLemmatizedFields()))
+                .withConstructor(Arrays.asList(imgProcess,new TilesAndReplicatedFromReference()) , Arrays.asList(new RemoveLemmatizedFields()))
                 .addMockedMethod("foxml")
                 .addMockedMethod("solrxml")
 

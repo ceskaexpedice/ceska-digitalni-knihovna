@@ -22,11 +22,13 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
+
     <dependency>
       <groupId>cz.incad.kramerius</groupId>
       <artifactId>import</artifactId>
       <version>5.0.0-SNAPSHOT</version>
     </dependency>
+
   </dependencies>
     <build>
         <sourceDirectory>${basedir}/src/main/java</sourceDirectory>

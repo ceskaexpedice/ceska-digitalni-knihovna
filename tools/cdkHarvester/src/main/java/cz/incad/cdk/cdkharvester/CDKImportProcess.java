@@ -21,6 +21,7 @@ import com.sun.jersey.api.client.WebResource;
 
 import cz.incad.cdk.cdkharvester.process.foxml.ImageReplaceProcess;
 import cz.incad.cdk.cdkharvester.process.foxml.ProcessFOXML;
+import cz.incad.cdk.cdkharvester.process.foxml.TilesAndReplicatedFromReference;
 import cz.incad.cdk.cdkharvester.process.solr.ProcessSOLRXML;
 import cz.incad.cdk.cdkharvester.process.solr.RemoveLemmatizedFields;
 import cz.incad.cdk.cdkharvester.utils.FilesUtils;
@@ -78,6 +79,7 @@ public class CDKImportProcess extends AbstractCDKSourceHarvestProcess {
     public CDKImportProcess() throws IOException {
         super();
         this.foxmlProcessingChain.add(new ImageReplaceProcess());
+        this.foxmlProcessingChain.add(new TilesAndReplicatedFromReference());
         this.solrProcessingChain.add(new RemoveLemmatizedFields());
     }
 
