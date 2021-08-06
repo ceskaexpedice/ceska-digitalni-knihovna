@@ -61,16 +61,30 @@ public class TilesAndReplicatedFromReference implements ProcessFOXML {
                     }
                 });
                 for (Element rExt : relsExts) {
-                    Element replicatedFrom = XMLUtils.findElement(rExt, new XMLUtils.ElementsFilter() {
+                    List<Element> replicatedFroms = XMLUtils.getElementsRecursive(rExt, new XMLUtils.ElementsFilter() {
                         @Override
                         public boolean acceptElement(Element elm) {
                             return elm.getNodeName().equals("replicatedFrom");
                         }
                     });
 
-                    if (replicatedFrom != null) {
-                        changeUrl(replicatedFrom);
+                    if (replicatedFroms != null && !replicatedFroms.isEmpty()) {
+                        for (Element replFrom : replicatedFroms) {
+                            changeUrl(replFrom);
+                        }
                     }
+
+                    List<String> urls = new ArrayList<>();
+                    for (Element replFrom : replicatedFroms) {
+                        String textContent = replFrom.getTextContent();
+                        if (textContent != null && !urls.contains(textContent.trim())) {
+                            urls.add(textContent.trim());
+                        } else  {
+                            replFrom.getParentNode().removeChild(replFrom);
+                        }
+                    }
+
+
                     Element tilesUrl = XMLUtils.findElement(rExt, new XMLUtils.ElementsFilter() {
                         @Override
                         public boolean acceptElement(Element elm) {

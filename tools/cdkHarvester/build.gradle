@@ -6,7 +6,7 @@ apply plugin: 'eclipse'
 //apply plugin: 'application'
 
 group = "org.cdk.tools"
-version = "5.4.2.1_cdk"
+version = "5.4.2.2_cdk"
 
  repositories {
             /*
