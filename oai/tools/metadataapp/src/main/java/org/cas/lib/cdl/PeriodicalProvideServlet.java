@@ -58,8 +58,7 @@ import java.net.URL;
 import java.awt.Image;
 import org.json.JSONException;
 import com.neovisionaries.i18n.*;
-import java.io.UnsupportedEncodingException;
-import javax.swing.JOptionPane; 
+import java.io.UnsupportedEncodingException; 
 
 public class PeriodicalProvideServlet extends HttpServlet {
 
@@ -473,7 +472,6 @@ public class PeriodicalProvideServlet extends HttpServlet {
                             
                             LanguageAlpha3Code alpha3B = LanguageAlpha3Code.getByCode(lang);
                             if (alpha3B != null) {
-                                JOptionPane.showMessageDialog(null, "Lang je " + lang);
                                 LanguageCode alpha2 = alpha3B.getAlpha2();
                                 if (alpha2 != null) {
                                     lang = alpha2.toString();
