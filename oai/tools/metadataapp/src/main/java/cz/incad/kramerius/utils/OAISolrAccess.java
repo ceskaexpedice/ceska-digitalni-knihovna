@@ -66,7 +66,7 @@ public class OAISolrAccess implements SolrAccess {
 	private String model(JSONObject oneItem) {
 		return oneItem.getString("model");
 	}
-
+        
 	@Override
 	public ObjectModelsPath[] getPathOfModels(String pid) throws IOException {
 		try {

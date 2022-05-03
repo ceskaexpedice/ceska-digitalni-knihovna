@@ -53,23 +53,33 @@ import org.w3c.dom.Node;
 import java.util.Map;
 import java.util.HashMap;
 
+import javax.imageio.ImageIO;
+import java.net.URL;
+import java.awt.Image;
+import org.json.JSONException;
+import com.neovisionaries.i18n.*;
+import java.io.UnsupportedEncodingException;
+import javax.swing.JOptionPane; 
+
 public class PeriodicalProvideServlet extends HttpServlet {
 
+        
 	public static final Logger LOGGER = Logger.getLogger(PeriodicalProvideServlet.class.getName());
 
 	public static final String DC_STREAM_LOCATION = "https://cdk.lib.cas.cz/search/api/v5.0/item/%s/streams/DC";
 	public static final String BIBLIO_MODS_STREAM_LOCATION = "https://cdk.lib.cas.cz/search/api/v5.0/item/%s/streams/BIBLIO_MODS";
 	public static final String ITEM_LOCATION = "https://cdk.lib.cas.cz/search/api/v5.0/item/%s";
 	public static final String CDK_LOCATION = "https://cdk.lib.cas.cz/search/%s";
-	
-	/**  client location */
+        // 12.10.2021 novinka
+        public static final String SOLR_LOCATION = "https://cdk.lib.cas.cz/search/api/v5.0/search?wt=json&q=PID:%s&fl=%s";
+        
+        /**  client location */
 	public static final String CDK_CLIENT_LOCATION = "https://cdk.lib.cas.cz/client/%s";
 	
 	/** handle for detecting uuid */
-        public static final String HANDLE_REPLACEMENT = "https://cdk.lib.cas.cz/client/handle/";
+	public static final String HANDLE_REPLACEMENT = "https://cdk.lib.cas.cz/client/handle/";
+ 
 	
-	
-        
 	private static String getPid(HttpServletRequest req) {
 		return req.getParameter("pid");
 	}
@@ -135,25 +145,79 @@ public class PeriodicalProvideServlet extends HttpServlet {
 		act.perform(this.fa, this.sa, this.jsonCache, this.dcCache, req, resp);
 	}
         
-        private static boolean isInCollection(JSONObject itemJSON, String collection) {
-            if (itemJSON.has("collections")) {
-                JSONArray collections = itemJSON.getJSONArray("collections");
+        private static boolean isInCollection(String collection, String pid) throws JSONException, UnsupportedEncodingException {
+            JSONArray collections = Utils.getCollections(pid);
+
+            if (collections != null) {
                 int length = collections.length();
                 for (int i = 0; i < length; i++) {
                     if (collections.get(i).toString().equals(collection)) {
                         return true;
                     }
                 }
-                
             }
             return false;
         }
-
+        
 	public enum Actions {
+                exists {
+			
+			@Override
+			public void perform(FedoraAccess fa, SolrAccess sa, CachedAccessToJson jsonCache,CachedAccessToDC dcCache, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+                            try {
+                                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                                factory.setNamespaceAware(true);
+                                DocumentBuilder builder = factory.newDocumentBuilder();
+                                Document exists = builder.newDocument();
+                                Element root = exists.createElement("exists");
+                                
+                                try {
+                                    String pid = getPid(req);
+                                    if (pid != null && (!pid.trim().equals(""))) {                                              
+                                        Document mods = fa.getBiblioMods(pid);  
+                                        Document dc = dcCache.get(pid);
+                                        JSONObject itemJSON = jsonCache.get(pid);
+                                        root.setTextContent("YES");
+                                        exists.appendChild(root);
+                                        resp.setContentType("text/xml; charset=utf-8");
+                                        XMLUtils.print(exists, resp.getWriter());
+                                    }
+                                    else {
+                                        root.setTextContent("NO");
+                                        exists.appendChild(root);
+                                        resp.setContentType("text/xml; charset=utf-8");
+                                        XMLUtils.print(exists, resp.getWriter());
+                                    }
+                                } catch (DOMException e) {
+                                    LOGGER.log(Level.SEVERE, e.getMessage(), e);
+                                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                                } catch (ExecutionException e) {
+                                    LOGGER.log(Level.SEVERE, e.getMessage(), e);
+                                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                                } catch (IOException e) {
+                                    root.setTextContent("NO");
+                                    exists.appendChild(root);
+                                    resp.setContentType("text/xml; charset=utf-8");
+                                    try { 
+                                        XMLUtils.print(exists, resp.getWriter());
+                                    } catch (TransformerException ex) {
+                                        LOGGER.log(Level.SEVERE, e.getMessage(), e);
+					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                                    }
+                                } catch (TransformerException e) {
+					LOGGER.log(Level.SEVERE, e.getMessage(), e);
+					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                                }
+                            } catch (ParserConfigurationException ex) {
+					Logger.getLogger(PeriodicalProvideServlet.class.getName()).log(Level.SEVERE, null, ex);
+				}
+			}
+		},
+                
 		europeana {
 
 			@Override
-			public void perform(FedoraAccess fa, SolrAccess sa, CachedAccessToJson jsonCache,CachedAccessToDC dcCache, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+			public void perform(FedoraAccess fa, SolrAccess sa, CachedAccessToJson jsonCache, CachedAccessToDC dcCache, HttpServletRequest req, HttpServletResponse resp) throws IOException {
 				try {
 					String pid = getPid(req);
 					if (pid != null && (!pid.trim().equals(""))) {
@@ -164,7 +228,7 @@ public class PeriodicalProvideServlet extends HttpServlet {
 						Element root = europeana.createElementNS("http://www.europeana.eu/schemas/edm/", "edm:record");
 						root.setAttribute("xmlns:rdf",FedoraNamespaces.RDF_NAMESPACE_URI);
 						europeana.appendChild(root);
-                                                
+
                                                 String formattedURL = String.format(PeriodicalProvideServlet.CDK_LOCATION, "handle/"+pid);
 
 						Element elementShownAt = europeana.createElementNS("http://www.europeana.eu/schemas/edm/","edm:isShownAt");
@@ -182,14 +246,21 @@ public class PeriodicalProvideServlet extends HttpServlet {
 								root.appendChild(elementShownBy);
 							}
 						}
-						
-						boolean allowed = OAIMWUtils.process(fa, sa, pid, null);    
                                                 
+                                                // 14.10.2020 - for map and graphic they want url for image in isShownBy
+                                                if ((matchModel(itemJSON, "map") || matchModel(itemJSON, "graphic")) && matchPolicy(itemJSON, "public")) {
+                                                    String objectUrl = String.format(PeriodicalProvideServlet.CDK_LOCATION, "img?pid=" + pid + "&stream=IMG_FULL");
+                                                    Element elementShownBy = europeana.createElementNS("http://www.europeana.eu/schemas/edm/","edm:isShownBy");
+                                                    elementShownBy.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", objectUrl);
+                                                    root.appendChild(elementShownBy);
+						}
+
                                                 // vc:c4bb27af-3a51-4ac2-95c7-fd393b489e26 - KNAV
-                                                boolean isKNAV = isInCollection(itemJSON, "vc:c4bb27af-3a51-4ac2-95c7-fd393b489e26");
+                                                boolean isKNAV = isInCollection("vc:c4bb27af-3a51-4ac2-95c7-fd393b489e26", pid);
                                                 
                                                 // For KNAV only use moving wall otherwise decide after policy
 						if (isKNAV) {
+                                                    boolean allowed = OAIMWUtils.process(fa, sa, pid, null); 
                                                     if (allowed) {
 							Element right = europeana.createElementNS("http://www.europeana.eu/schemas/edm/","edm:rights");
 							right.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", "http://creativecommons.org/publicdomain/mark/1.0/");
@@ -211,7 +282,14 @@ public class PeriodicalProvideServlet extends HttpServlet {
                                                 else {
                                                     if (matchPolicy(itemJSON, "public")) {
                                                         Element right = europeana.createElementNS("http://www.europeana.eu/schemas/edm/","edm:rights");
-                                                        right.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", "http://creativecommons.org/publicdomain/mark/1.0/");
+                                                        // 12.10.2021 - non KNAV articles different licence
+                                                        if (matchModel(itemJSON, "article")) {
+                                                            right.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", "http://creativecommons.org/publicdomain/zero/1.0/");
+                                                        }
+                                                        else {
+                                                          right.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", "http://creativecommons.org/publicdomain/mark/1.0/");  
+                                                        }
+                                                        
                                                         root.appendChild(right);  
                                                     }
                                                     else {
@@ -225,10 +303,10 @@ public class PeriodicalProvideServlet extends HttpServlet {
                                                 Element elementObject = europeana.createElementNS("http://www.europeana.eu/schemas/edm/","edm:object");
                                                 
                                                 if (matchPolicy(itemJSON, "public")) {
-                                                    objectUrl = String.format(PeriodicalProvideServlet.CDK_LOCATION, "img?pid=" + pid + "&stream=IMG_FULL&action=TRANSCODE&outputFormat=PNG");
+                                                    objectUrl = String.format(PeriodicalProvideServlet.CDK_LOCATION, "img?pid=" + pid + "&stream=IMG_FULL");
                                                 }
                                                 else {
-                                                    objectUrl = String.format(PeriodicalProvideServlet.CDK_LOCATION, "img?pid=" + pid + "&stream=IMG_THUMB&action=GETRAW");
+                                                    objectUrl = String.format(PeriodicalProvideServlet.CDK_LOCATION, "img?pid=" + pid + "&stream=IMG_THUMB");
                                                 }
 						elementObject.setAttributeNS(FedoraNamespaces.RDF_NAMESPACE_URI, "rdf:resource", objectUrl);
 						root.appendChild(elementObject);
@@ -247,13 +325,15 @@ public class PeriodicalProvideServlet extends HttpServlet {
 				} catch (TransformerException e) {
 					LOGGER.log(Level.SEVERE, e.getMessage(), e);
 					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				} catch (XPathExpressionException e) {
+                                } catch (XPathExpressionException e) {
 					LOGGER.log(Level.SEVERE, e.getMessage(), e);
 					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				} catch (RightCriteriumException e) {
 					LOGGER.log(Level.SEVERE, e.getMessage(), e);
 					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				}				
+				} catch (JSONException ex) {				
+                                Logger.getLogger(PeriodicalProvideServlet.class.getName()).log(Level.SEVERE, null, ex);
+                            }				
 			}
 		},
 		
@@ -272,8 +352,9 @@ public class PeriodicalProvideServlet extends HttpServlet {
                                             JSONObject itemJSON = jsonCache.get(pid);
                                             // build new title
                                             
-                                             dc = getLangForDescription(dc, mods);
-                                             dc = getLangForTitle(dc, mods);
+                                             getLangForDescription(dc, mods);
+                                             getLangForTitle(dc, mods);
+                                             getDCType(dc, itemJSON);
                                              
                                             if (matchModel(itemJSON, "periodical")) {
                                                 String ntitle = TitleParts.buildTitle(jsonCache.getForPath(pid, jsonCache));
@@ -295,20 +376,22 @@ public class PeriodicalProvideServlet extends HttpServlet {
                                                     dc.getDocumentElement().appendChild(sourceElement);
                                                 }
                                                      sourceElement.setTextContent(ntitle);
-
+                                            }
+                                            
+                                            // dc:language for SOUND and IMAGE is not mandatory
+                                            if (!matchModel(itemJSON, "soundrecording") && !matchModel(itemJSON, "graphic") && !matchModel(itemJSON, "map")) {
                                                 Element langElement = XMLUtils.findElement(dc.getDocumentElement(), "language",
                                                             "http://purl.org/dc/elements/1.1/");
                                                 if (langElement == null) {
                                                     langElement = dc.createElementNS("http://purl.org/dc/elements/1.1/", "dc:language");
                                                     dc.getDocumentElement().appendChild(langElement);
                                                 }
-                                                langElement.setTextContent(
-                                                    langDetect.detectLanguage(dcCache.getForPath(pid, jsonCache)));
-                                             }
-
-                                             changeIdentifier(dc);
-                                             resp.setContentType("text/xml; charset=utf-8");
-                                             XMLUtils.print(dc, resp.getWriter()); 
+                                                langElement.setTextContent(langDetect.detectLanguage(dcCache.getForPath(pid, jsonCache)));
+                                            }
+                                            
+                                            changeIdentifier(dc);
+                                            resp.setContentType("text/xml; charset=utf-8");
+                                            XMLUtils.print(dc, resp.getWriter()); 
 					}
 				} catch (DOMException e) {
 					LOGGER.log(Level.SEVERE, e.getMessage(), e);
@@ -326,15 +409,13 @@ public class PeriodicalProvideServlet extends HttpServlet {
                 agent {
 			
 			@Override
-			public void perform(FedoraAccess fa, SolrAccess sa, CachedAccessToJson jsonCache,CachedAccessToDC dcCache, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+			public void perform(FedoraAccess fa, SolrAccess sa, CachedAccessToJson jsonCache, CachedAccessToDC dcCache, HttpServletRequest req, HttpServletResponse resp) throws IOException {
 				try {
 					String pid = getPid(req);                                    
 
 					if (pid != null && (!pid.trim().equals(""))) {
                                             
                                             Document mods = fa.getBiblioMods(pid);
-                                            Document dc = dcCache.get(pid);
-                                            JSONObject itemJSON = jsonCache.get(pid);
                                             // build new title
                                             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                                             factory.setNamespaceAware(true);
@@ -350,15 +431,12 @@ public class PeriodicalProvideServlet extends HttpServlet {
                                             Element creators = agent.createElementNS(FedoraNamespaces.DC_NAMESPACE_URI,"dc:creators");
                                             root.appendChild(creators);
                                             
-                                            agent = getCreator(agent, mods, dc);
+                                            getCreator(agent, mods);
                                             
                                             resp.setContentType("text/xml; charset=utf-8");
                                             XMLUtils.print(agent, resp.getWriter()); 
 					}
 				} catch (DOMException e) {
-					LOGGER.log(Level.SEVERE, e.getMessage(), e);
-					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				} catch (ExecutionException e) {
 					LOGGER.log(Level.SEVERE, e.getMessage(), e);
 					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				} catch (TransformerException e) {
@@ -374,7 +452,7 @@ public class PeriodicalProvideServlet extends HttpServlet {
 		public abstract void perform(FedoraAccess fa,SolrAccess sa,  CachedAccessToJson jsonCache,CachedAccessToDC dcCache, HttpServletRequest req, HttpServletResponse resp) throws IOException ;
 	}
         
-        private static Document getLangForTitle(Document dc, Document mods) {
+        private static void getLangForTitle(Document dc, Document mods) {
             List<Element> titleInfoElements = XMLUtils.findElements(mods.getDocumentElement(), "titleInfo", "lang", "http://www.loc.gov/mods/v3");
 
             for (Element titleInfoElement : titleInfoElements) {
@@ -392,18 +470,29 @@ public class PeriodicalProvideServlet extends HttpServlet {
                         Element titleDCElement = XMLUtils.findElement(dc.getDocumentElement(), "title", title,
                                     "http://purl.org/dc/elements/1.1/");
                         if (titleDCElement != null) {
-                            titleDCElement.setAttribute("lang", lang);
+                            
+                            LanguageAlpha3Code alpha3B = LanguageAlpha3Code.getByCode(lang);
+                            if (alpha3B != null) {
+                                JOptionPane.showMessageDialog(null, "Lang je " + lang);
+                                LanguageCode alpha2 = alpha3B.getAlpha2();
+                                if (alpha2 != null) {
+                                    lang = alpha2.toString();
+                                }
+                            }
+                            
+                            if (lang != null && !lang.equals("")) {
+                                titleDCElement.setAttribute("xml:lang", lang);
+                            }
                         }
                     }
                }
             }
-            return dc;
         }
         
-        private static Document getLangForDescription(Document dc, Document mods) {
+        private static void getLangForDescription(Document dc, Document mods) {
             List<Element> abstractElements = XMLUtils.findElements(mods.getDocumentElement(), "abstract", "http://www.loc.gov/mods/v3");
-                                        
-            if (abstractElements != null) {                        
+                                     
+            if (abstractElements != null) {     
                 for (Element abstractElement : abstractElements) {
                     if (abstractElement.hasAttribute("lang")) {
                         String lang = abstractElement.getAttribute("lang");
@@ -411,16 +500,38 @@ public class PeriodicalProvideServlet extends HttpServlet {
                         Element descriptionElement = XMLUtils.findElement(dc.getDocumentElement(), "description", abstractText,
 									"http://purl.org/dc/elements/1.1/");
                         if (descriptionElement != null) {
-                            descriptionElement.setAttribute("lang", lang);  
+                            LanguageAlpha3Code alpha3B = LanguageAlpha3Code.getByCode(lang);
+                            if (alpha3B != null) {
+                                LanguageCode alpha2 = alpha3B.getAlpha2();
+                                if (alpha2 != null) {
+                                    lang = alpha2.toString();
+                                }
+                            }
+                            
+                            if (lang != null && !lang.equals("")) {
+                                descriptionElement.setAttribute("xml:lang", lang);
+                            }
                         }
-                        
                     }
                 }
             }
-            return dc;
         }
         
-        private static Document getCreator(Document agent, Document mods, Document dc) throws ParserConfigurationException, IOException, TransformerException {
+        private static void getDCType(Document dc, JSONObject itemJSON) {
+            List<Element> typeDCElement = XMLUtils.findElements(dc.getDocumentElement(), "type", "http://purl.org/dc/elements/1.1/");
+            int size = typeDCElement.size();
+            
+            if (size == 0) {
+                String model = getModel(itemJSON);
+                Element typeElement = dc.createElementNS("http://purl.org/dc/elements/1.1/", "dc:type");
+                if (model != null) {
+                    typeElement.setTextContent("model:" + model);
+                    dc.getDocumentElement().appendChild(typeElement);
+                }
+            }
+        }
+        
+        private static void getCreator(Document agent, Document mods) throws ParserConfigurationException, IOException, TransformerException {
             List<Element> nameElements = XMLUtils.findElements(mods.getDocumentElement(), "name", "http://www.loc.gov/mods/v3");
             
             if (nameElements != null) {
@@ -477,7 +588,6 @@ public class PeriodicalProvideServlet extends HttpServlet {
                     }
                 }
             }
-            return agent;
         }
         
         private static Map <String, String> getNameAndDate(Element nameElement, Boolean isForAgent) {

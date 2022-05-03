@@ -2,7 +2,6 @@ package org.cas.lib.cdl;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,10 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,9 +21,11 @@ import org.xml.sax.SAXException;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.ClientResponse;
 
 import cz.incad.kramerius.utils.XMLUtils;
-import cz.incad.kramerius.utils.XMLUtils.ElementsFilter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 public class Utils {
 
@@ -84,21 +82,62 @@ public class Utils {
 	public static JSONObject item(String pid) {
 		String formatted = String.format(PeriodicalProvideServlet.ITEM_LOCATION, pid);
 		Client c = Client.create();
-	    WebResource r = c.resource(formatted);
-	    String response = r.accept(MediaType.APPLICATION_JSON).get(String.class);
+                WebResource r = c.resource(formatted);
+                
+                ClientResponse response1 = r.get(ClientResponse.class);
+                int status = response1.getStatus();
+                if (status != 200) {
+                    return null;
+                }
+                
+                String response = r.accept(MediaType.APPLICATION_JSON).get(String.class);
+                
 		return  new JSONObject(response);
+	}
+        
+        public static JSONArray getCollections(String pid) throws UnsupportedEncodingException {
+                String pidFormatted = URLEncoder.encode("\"" + pid + "\"", "UTF-8");
+                String url = String.format(PeriodicalProvideServlet.SOLR_LOCATION, pidFormatted, "collection");
+                
+		Client c = Client.create();
+                WebResource r = c.resource(url);
+                String response = r.accept(MediaType.APPLICATION_JSON).get(String.class);
+
+		JSONObject item = new JSONObject(response);
+                JSONArray docs = item.getJSONObject("response").getJSONArray("docs");
+                
+                if (((JSONObject)(docs.get(0))).isNull("collection")) {
+                    return null;
+                }
+
+                JSONArray collection = ((JSONObject)(docs.get(0))).getJSONArray("collection");
+                return collection;
 	}
 	
 	public static boolean matchModel(JSONObject itemJSON, String expectingModel) {
-		JSONArray context =  selectContext(itemJSON);
+		JSONArray context = selectContext(itemJSON);
 		for (int i = 0,ll=context.length(); i < ll; i++) {
 			JSONArray one = context.getJSONArray(i);
-			for (int j = 0,lz=one.length(); j < lz; j++) {
+			for (int j = 0, lz = one.length(); j < lz; j++) {
 				String model = one.getJSONObject(j).getString("model");
-				if (model.equals(expectingModel)) return true;
+                                if (model.equals(expectingModel)) return true;
 			}
 		}
 		return false;
+	}
+        
+        public static String getModel(JSONObject itemJSON) {
+		JSONArray context = selectContext(itemJSON);
+		for (int i = 0, ll = context.length(); i < ll; i++) {
+			JSONArray one = context.getJSONArray(i);
+			for (int j = 0, lz = one.length(); j < lz; j++) {
+				String model = one.getJSONObject(j).getString("model");
+                                if (j + 1 == lz) {
+                                    return model;
+                                }   
+			}
+		}
+		return "";
 	}
         
         public static boolean matchPolicy(JSONObject itemJSON, String expectingPolicy) {
