@@ -20,14 +20,14 @@ import com.google.common.cache.LoadingCache;
 
 public class CachedAccessToMods implements CachedAccess<Document, String> {
 
-	public static final int DEFAULT_MAXIMUM_SIZE = 1000000;
-	public static final int EXPIRATION_TIME = 30;
+	public static final int DEFAULT_MAXIMUM_SIZE = 500;
+	public static final int EXPIRATION_TIME = 3;
 
 	private LoadingCache<String, Document> modsObjectsChache;
 
 	public CachedAccessToMods() {
-		this.modsObjectsChache = CacheBuilder.newBuilder().maximumSize(DEFAULT_MAXIMUM_SIZE)
-				.expireAfterAccess(EXPIRATION_TIME, TimeUnit.DAYS).build(new CacheLoader<String, Document>() {
+		this.modsObjectsChache = CacheBuilder.newBuilder().maximumSize(DEFAULT_MAXIMUM_SIZE) 
+				.expireAfterAccess(EXPIRATION_TIME, TimeUnit.MINUTES).build(new CacheLoader<String, Document>() {
 					@Override
 					public Document load(String empId) throws Exception {
 						return loadMODSFromServer(empId);
@@ -41,13 +41,18 @@ public class CachedAccessToMods implements CachedAccess<Document, String> {
 	}
 
 	@Override
-	public List<Document> getForPath(String k, ContextAware contextAware) throws ExecutionException {
-		List<Document> retvals = new ArrayList<Document>();
-		List<String> path = contextAware.pathsSelect(k);
-		for (String pid : path) {
-			retvals.add(get(pid));
+	public List<Document> getForPath(String k, ContextAware contextAware) {
+            List<Document> retvals = new ArrayList<Document>();
+            try {
+                List<String> path = contextAware.pathsSelect(k);
+                for (String pid : path) {
+                    retvals.add(get(pid));
 		}
-		return retvals;
+                // ignore and return retvals
+            } catch (ExecutionException ex) {
+                return retvals;
+            }
+            return retvals;
 	}
 
 	private Document loadMODSFromServer(String pid)

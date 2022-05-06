@@ -88,8 +88,8 @@ public enum TitleParts {
 		for (JSONObject jsonObject : items) {
 			String model = jsonObject.getString("model");
 			TitleParts part = TitleParts.valueOf(model);
-			String partOftitle = part.part(jsonObject);
-			if (partOftitle != null) {
+			String partOftitle = part.part(jsonObject);                                               
+			if (partOftitle != null && part != article) {
 				if (!titles.contains(partOftitle)) {
 					titles.add(partOftitle);
 				}
