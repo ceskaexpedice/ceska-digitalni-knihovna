@@ -12,4 +12,7 @@ Pokud máte zájem o zapojení digitální knihovny do České digitální kniho
 
 Česká digitální knihovna - RightLib je hlavním aplikovaným výstupem výzkumného projektu s názvem „RightLib – elektronické zpřístupnění chráněných publikací “, identifikační kód projektu: DG18P02OVV002, financovaného z programu NAKI Ministerstva kutury ČR v letech 2018-2022.
 
+Implementace mirroringu a load balancingu mezi primární a sekundární instancí České digitální knihovny je řešen v rámci projektu „Vytvoření mirroringu a loadbalancingu v prostředí ČDK“, číslo spisu NK ČR: 624/2024.
+
+
 Více informací je uvedeno na wiki https://github.com/ceskaexpedice/ceska-digitalni-knihovna/wiki
