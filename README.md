@@ -8,7 +8,7 @@ Samotné digitální dokumenty jsou uloženy ve zdrojových (tedy původních) d
 
 Dostupnost dokumentů prostřednictvím ČDK je řízena nastavením ve zdrojových digitálních knihovnách licenčním ujednáním mezi knihovnami a vlastníky práv a autorskému zákonu, který připouští zpřístupnění děl 70 let po smrti všech autorů a 50 let od vydání díla. Dostupnost dokumentů se liší na základě přihlášení uživatele a skupiny, do které patří.
 
-Pokud máte zájem o zapojení digitální knihovny do České digitální knihovny, napište na cdk@lib.cas.cz.
+Pokud máte zájem o zapojení digitální knihovny do České digitální knihovny, napište na info@ceskadigitalniknihovna.cz.
 
 Česká digitální knihovna - RightLib je hlavním aplikovaným výstupem výzkumného projektu s názvem „RightLib – elektronické zpřístupnění chráněných publikací “, identifikační kód projektu: DG18P02OVV002, financovaného z programu NAKI Ministerstva kutury ČR v letech 2018-2022.
 
