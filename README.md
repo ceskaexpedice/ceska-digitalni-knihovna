@@ -1,5 +1,7 @@
 # ČESKÁ DIGITÁLNÍ KNIHOVNA
 
+Tento repozitář se již nebude používat, nové issues prosím vkládejte k relevantním repozitářům (jádro: https://github.com/ceskaexpedice/kramerius a web klient: https://github.com/ceskaexpedice/kramerius-web-client)
+
 [Česká digitální knihovna - RightLib](https://czechdigitallibrary.cz/)
 
 Česká digitální knihovna (ČDK) obsahuje metadata průběžně sklízená z digitálních knihoven provozovaných v České republice. Cílem je postupně zapojit všechny digitální knihovny v České republice provozované v systému Kramerius. Seznam zapojených knihoven je po vstupu do digitální knihovny ve filtru s názvem Zdroj.
